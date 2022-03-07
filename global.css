@@ -1,0 +1,70 @@
+* {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: row;
+}
+
+main {
+    margin: 3px;
+    padding: 3px;
+    width: 50vw;
+    height: 100vh;
+    border: 1px solid black;
+}
+
+aside {
+    margin: 3px;
+    padding: 3px;
+    width: 25vw;
+    height: 100vh;
+    overflow-y: scroll;
+    border: 1px solid black;
+}
+
+textarea.main {
+    resize: auto;
+    font-family : inherit;
+    width:45vw;
+    height:30vh;
+}
+
+textarea.out {
+    resize: auto;
+    font-family : inherit;
+    width:20vw;
+    height:10vh;
+    background-color: #000000;
+    color: #ffffff;
+}
+
+textarea.message {
+    resize: auto;
+    font-family : inherit;
+    width:22vw;
+    height:5vh;
+    background-color: #000000;
+    color: #ffffff;
+}
+
+input.in {
+    resize: auto;
+    font-family : inherit;
+    width:22vw;
+    height: 20pt;
+}
+
+.wrapper {
+    display: flex;
+}
+
+.wrapper > div {
+    flex: 1;
+}
+
+.item {
+    box-sizing: border-box;
+}

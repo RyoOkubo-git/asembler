@@ -1,0 +1,1 @@
+(registers\[this\.r2i\[[^ ]*\])

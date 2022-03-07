@@ -1,0 +1,281 @@
+   #comment"\n"
+aiueo
+
+-----------------------------------------------------------------------------
+
+       .data
+stry: .asciiz "yes"
+strn: .asciiz "no"
+
+       .text # ここから先はテキストセグメント
+       .globl main # main をグローバルラベルとする
+
+main:  li $v0, 5
+       syscall
+       move $t0, $v0
+
+---------------------------------------------------------------------------
+
+       .data
+str_y: .asciiz "yes\n"
+str_n: .asciiz "no\n"
+
+       .text # ここから先はテキストセグメント
+       .globl main # main をグローバルラベルとする
+
+main: li $v0, 5
+      syscall
+      move $t0, $v0
+      andi $t1, $t0, 15
+      beq $t1, $zero, yes
+      bne $t1, $zero, no
+yes:  la $a0, str_y
+      b pri
+no:   la $a0, str_n
+pri:  li  $v0, 4
+      syscall
+      jr $ra # main を終了してリターンするを終了してリターンする
+
+----------------------------------------------------------------------------------
+
+      .data
+list: .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+
+      .text
+      .globl main
+
+main: addi $sp, $sp, -4 #スタックに 1 ワードの領域を確保
+      sw $ra, 0($sp) # 戻り先アドレスの退避
+      la $a0, list # 第 1 引 数 = データ領域 list のアドレス
+      li $a1, 10 # 第 2 引数 = 10 データ数
+      jal sum # サブルーチン sum の呼び出し
+      move $a0, $v0 # システムコールの引数 = sum の戻り値 $v0 総和
+      li $v0, 1 # print_integer の指定
+      syscall # 総和の出力
+      lw $ra, 0($sp) # 戻り先アドレスの復元
+      addi $sp, $sp, 4 # スタックに確保した領域の開放
+      jr $ra
+
+sum:  addi $sp, $sp, -4 # スタックに 1 ワードの領域を確保
+      sw $s0, 0($sp) # $s0 の退避
+      li $v0, 0
+l1:   lw $s0 , 0($a0)
+      add $v0, $v0, $s0
+      addi $a0, $a0, 4
+      addi $a1, $a1, -1
+      bne $a1, $zero, l1
+      lw $s0, 0($sp) # $s0 の回復
+      addi $sp, $sp, 4 # スタックに確保した領域の開放
+      jr $ra
+
+----------------------------------------------------------------------------------
+      .data
+list: .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+list2: .word 1, 3, 6, 7, 9
+
+----------------------------------------------------------------------------------
+
+      .text
+      .globl main
+
+main: add $s0, $s0, $s1
+
+----------------------------------------------------------------------------------
+
+       .text # ここから先はテキストセグメント
+       .globl main # main をグローバルラベルとする
+
+main: li $s0, 5
+      li $s1, 3
+      add $s2, $s0, $s1
+      addi $s3, $s0, 9
+      sub  $s4, $s0, $s1
+
+----------------------------------------------------------------------------------
+
+       .text # ここから先はテキストセグメント
+       .globl main # main をグローバルラベルとする
+
+main: li $s0, 5
+      li $s1, 3
+      and $s2, $s0, $s1
+      andi $s3, $s0, 9
+      or  $s4, $s0, $s1
+      ori $s5, $s0, 6
+
+----------------------------------------------------------------------------------
+
+       .text # ここから先はテキストセグメント
+       .globl main # main をグローバルラベルとする
+
+main: li $s0, 16
+      li $s1, -16
+      sll $s2, $s0, 2
+      srl $s3, $s0, 3
+      srl $s4, $s1, 3
+      sra  $s5, $s0, 3
+      sra  $s6, $s1, 3
+
+----------------------------------------------------------------------------------
+
+       .text # ここから先はテキストセグメント
+       .globl main # main をグローバルラベルとする
+
+main: addi $sp, $sp, -8
+      li $s0, 16
+      li $s1, -16
+      sw $s0, 0($sp)
+      sw $s1, 4($sp)
+      lw $s2, 0($sp)
+      lw $s3, 4($sp)
+      
+----------------------------------------------------------------------------------
+      .data
+list: .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+
+      .text
+      .globl main
+
+main: la $s0, list
+
+----------------------------------------------------------------------------------
+
+      .text # ここから先はテキストセグメント
+      .globl main # main をグローバルラベルとする
+
+main: move $t0, $zero
+      li $t1, 10
+      li $t2, 5
+loop: add $t0, $t0, $t2
+      addi $t1, $t1, -1
+      bne $t1, $zero, loop
+      addi $t0, $t0, 3
+      li $v0, 1
+      move $a0, $t0
+
+----------------------------------------------------------------------------------
+
+      .text # ここから先はテキストセグメント
+      .globl main # main をグローバルラベルとする
+
+main: move $t0, $zero
+      li $t0, -1
+loop: addi $t0, $t0, 1
+      beq $t0, $zero, loop
+      addi $t0, $t0, 3
+      li $v0, 1
+      move $a0, $t0
+
+----------------------------------------------------------------------------------
+
+      .text # ここから先はテキストセグメント
+      .globl main # main をグローバルラベルとする
+
+main: move $t0, $zero
+      addi $t0, $t0, 1
+      addi $t0, $t0, 1
+      addi $t0, $t0, 1
+      b    loop
+      addi $t0, $t0, 1
+      addi $t0, $t0, 1
+      addi $t0, $t0, 1
+loop: addi $t0, $t0, 3
+      li $v0, 1
+      move $a0, $t0
+
+----------------------------------------------------------------------------------
+
+       .data
+ast:   .asciiz "A"
+bst:   .asciiz "B"
+cst:   .asciiz "C"
+movea:  .asciiz "-->"
+newln: .asciiz "\n"
+
+       .text
+       .globl main
+
+main:  addi $sp, $sp, -12
+       sw   $ra, 0($sp)
+       sw   $s0, 4($sp)
+       sw   $s1, 8($sp)
+
+       li   $v0, 5
+       syscall
+       move $a0, $v0
+       la   $a1, ast
+       la   $a2, cst
+       la   $a3, bst
+       jal  hanoi
+
+       lw   $ra, 0($sp)
+       lw   $s0, 4($sp)
+       lw   $s1, 8($sp)
+       addi $sp, $sp, 12
+       jr   $ra
+
+hanoi: addi $sp, $sp, -20
+       sw   $ra, 0($sp)
+       sw   $s0, 4($sp)
+       sw   $s1, 8($sp)
+       sw   $s2, 12($sp)
+       sw   $s3, 16($sp)
+
+       move $s0, $a0
+       move $s1, $a1
+       move $s2, $a2
+       move $s3, $a3
+
+       li   $t0, 1
+       beq  $s0, $t0, zer
+       addi $a0, $s0, -1
+       move $a1, $s1
+       move $a2, $s3
+       jal  hanoi
+
+       move $a0, $s1
+       move $a1, $s2
+       jal  outp
+
+       addi $a0, $s0, -1
+       move $a1, $s3
+       move $a2, $s2
+       move $a3, $s1
+       jal  hanoi
+
+       b    ret
+
+zer:   move $a0, $s1
+       move $a1, $s2
+       jal  outp
+
+ret:   lw   $s3, 16($sp)
+       lw   $s2, 12($sp)
+       lw   $s1, 8($sp)
+       lw   $s0, 4($sp)
+       lw   $ra, 0($sp)
+       addi $sp, $sp, 20
+       jr   $ra
+
+outp:  addi $sp, $sp, -8
+       sw   $ra, 0($sp)
+       sw   $s0, 4($sp)
+       move $s0, $a1
+
+       li   $v0, 4
+       syscall
+       li   $v0, 4
+       la   $a0, movea
+       syscall
+       li   $v0,4
+       move $a0, $s0
+       syscall
+       li   $v0, 4
+       la   $a0, newln
+       syscall
+
+       lw   $s0, 4($sp)
+       lw   $ra, 0($sp)
+       addi $sp, $sp, 8
+       jr   $ra
+
