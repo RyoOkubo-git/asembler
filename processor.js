@@ -5,7 +5,9 @@ class Processor{
         this.stack = this.parser.stack;
         this.program = this.parser.program;
         this.startLabel;
-        this.pc; this.hi; this.lo;
+        this.pc; 
+        this.hi = new Register();
+        this.lo = new Register();
         this.registers = new Array();
         for(let i = 0; i < 32; i++){
             this.registers.push(new Register());
@@ -82,6 +84,10 @@ class Processor{
             case "add" : this.processAdd(inst); break;
             case "addi" : this.processAddi(inst); break;
             case "sub" : this.processSub(inst); break;
+            case "mult" : this.processMult(inst); break;
+            case "div" : this.processDiv(inst); break;
+            case "mfhi" : this.processMfhi(inst); break;
+            case "mflo" : this.processMflo(inst); break;
             case "and" : this.processAnd(inst); break;
             case "andi" : this.processAndi(inst); break;
             case "or" : this.processOr(inst); break;
@@ -144,6 +150,77 @@ class Processor{
         this.registers[reg1].dst = 1;
         this.registers[reg2].src = 1;
         this.registers[reg3].src = 1;
+    }
+
+    processMult(inst){
+        const reg1id = this.r2i[inst.opd1];
+        const reg2id = this.r2i[inst.opd2];
+        const reg1 = this.registers[reg1id].value;
+        const reg2 = this.registers[reg2id].value;
+        let bit1 = new Array(32).fill(0);
+        let bit2 = new Array(32).fill(0);
+        let bit3 = new Array(64).fill(0);
+        let i, c = 0, shift = 1;
+        this.hi.value = 0, this.lo.value = 0;
+        for(i = 0; i < 32; i++){
+            if((reg1 & shift) != 0){bit1[i] = 1;}
+            if((reg2 & shift) != 0){bit2[i] = 1;}
+            shift = shift << 1;
+        }
+    
+        for(i = 0; i < 32; i++){
+            if(bit2[i] == 1){
+                c = this.bitAdder(bit3, bit1, i, c);
+            }
+        }
+    
+        shift = 1;
+        for(i = 0; i < 32; i++){
+            this.lo.value = this.lo.value + bit3[i]*shift;
+            this.hi.value = this.hi.value + bit3[i+32]*shift;
+            shift = shift << 1;
+        }
+        this.registers[reg1id].src = 1;
+        this.registers[reg2id].src = 1;
+        this.hi.dst = 1;
+        this.lo.dst = 1;
+    }
+    
+    bitAdder(dst, src, num, c){
+        let i, d, s;
+        for(i = 0; i < 32; i++){
+            d = dst[i+num]; s = src[i];
+            dst[i+num] = (d ^ s ^ c);
+            c = ((d & s) | ((d ^ s) & c));
+        }
+        return c;
+    }
+
+    processDiv(inst){
+        const reg1id = this.r2i[inst.opd1];
+        const reg2id = this.r2i[inst.opd2];
+        const reg1 = this.registers[reg1id].value;
+        const reg2 = this.registers[reg2id].value;
+        this.hi.value = reg1 % reg2;
+        this.lo.value = Math.floor(reg1 / reg2);
+        this.registers[reg1id].src = 1;
+        this.registers[reg2id].src = 1;
+        this.hi.dst = 1;
+        this.lo.dst = 1;
+    }
+
+    processMfhi(inst){
+        const reg1 = this.r2i[inst.opd1];
+        this.registers[reg1].value = this.hi.value;
+        this.registers[reg1].dst = 1;
+        this.hi.src = 1;
+    }
+
+    processMflo(inst){
+        const reg1 = this.r2i[inst.opd1];
+        this.registers[reg1].value = this.lo.value;
+        this.registers[reg1].dst = 1;
+        this.lo.src = 1;
     }
 
     processAnd(inst){

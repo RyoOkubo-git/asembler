@@ -68,6 +68,7 @@ class Lexer{
         switch(tid){
             case "li" : case "move" : case "syscall" :
             case "add" : case "addi" : case "sub" :
+            case "mult" : case "div" : case "mfhi" : case "mflo" :
             case "and" : case "andi" : case "or" : case "ori" :
             case "sll" : case "srl" : case "sra" :
             case "sw" : case "lw" : case "la" :
