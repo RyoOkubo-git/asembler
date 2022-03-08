@@ -5,7 +5,7 @@ class Processor{
         this.stack = this.parser.stack;
         this.program = this.parser.program;
         this.startLabel;
-        this.pc;
+        this.pc; this.hi; this.lo;
         this.registers = new Array();
         for(let i = 0; i < 32; i++){
             this.registers.push(new Register());
