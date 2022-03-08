@@ -2,14 +2,17 @@ class Processor{
     constructor(){
         this.parser = new Parser();
         this.labels = this.parser.labels;
-        this.stack = this.parser.stack;
+        this.stack = new Array();
+        for(let i = 0; i < stackSize; i++){
+            this.stack.push(new StackData(0,"digit"));
+        }
         this.program = this.parser.program;
         this.startLabel;
         this.pc; 
         this.hi = new Register();
         this.lo = new Register();
         this.registers = new Array();
-        for(let i = 0; i < 32; i++){
+        for(let i = 0; i < registerNum; i++){
             this.registers.push(new Register());
         }
         this.r2i = 
@@ -26,19 +29,20 @@ class Processor{
         try {
             this.parser.parse(stream);
             this.startLabel = this.parser.startLabel;
-            this.registers[this.r2i["$sp"]].value = this.parser.sp;
+            this.registers[this.r2i["$sp"]].value = stackStandard;
             this.pc = this.labels[this.startLabel];
             this.registers[this.r2i["$ra"]].value = -1;
             this.syscallState = 0;
             this.execState = 1;
             this.runState = 0;
-            this.outputController.makeAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
+            this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
             this.outputController.printMessage("Load.\n");
         } catch (error) {
             this.outputController.printMessage(error.message);
             console.error(error);
         }
-        
+        console.log(this.parser.staticData);
+        console.log(this.parser.sdp.toString(16));
     }
 
     executeRun(){
@@ -56,10 +60,7 @@ class Processor{
         }
         if(this.syscallState == 5){return;}
         this.runState = 0;
-        this.outputController.makeAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
-        console.log(this.registers);
-        console.log(this.stack);
-        console.log(this.pc);
+        this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
     }
 
     executeStep(){
@@ -73,10 +74,7 @@ class Processor{
         }
         this.program[this.pc].current = 1;
         this.processInstruction(this.program[this.pc++].inst);
-        this.outputController.makeAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
-        console.log(this.registers);
-        console.log(this.stack);
-        console.log(this.pc);
+        this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
     }
 
     processInstruction(inst){
@@ -324,7 +322,7 @@ class Processor{
     processSw(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg3 = this.r2i[inst.opd3];
-        const address = (this.registers[reg3].value + parseInt(inst.opd2, 10))/4;
+        const address = this.sa2i(this.registers[reg3].value + parseInt(inst.opd2, 10));
         this.stack[address].value = this.registers[reg1].value;
         this.stack[address].kind = "digit";
         this.stack[address].dst = 1;
@@ -335,7 +333,7 @@ class Processor{
     processLw(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg3 = this.r2i[inst.opd3];
-        const address = (this.registers[reg3].value + parseInt(inst.opd2, 10))/4;
+        const address = this.sa2i(this.registers[reg3].value + parseInt(inst.opd2, 10));
         this.registers[reg1].value = this.stack[address].value;
         this.stack[address].src = 1;
         this.registers[reg1].dst = 1;
@@ -466,7 +464,6 @@ class Processor{
 
     processSyscall(){
         this.syscallState = this.registers[this.r2i["$v0"]].value;
-        console.log(this.syscallState);
         switch(this.syscallState){
             case 1 : this.outputController.printDisplay(this.outputInt()); this.syscallState = 0; break;
             case 4 : this.outputController.printDisplay(this.makeString()); this.syscallState = 0; break;
@@ -478,6 +475,7 @@ class Processor{
 
     makeString(){
         let address = this.registers[this.r2i["$a0"]].value;
+        if(address < dataStandard || dataStandard + 4*dataSize > address){throw new Error(`out of data segment`)}
         let str = "";
         let c = this.stack[address / 4];
         while(c.value != "\0"){
@@ -494,18 +492,20 @@ class Processor{
     }
 
     inputText(text){
-        console.log(text);
         const regexp = RegExp('^[+-]?[0-9]+', 'g');
         if(this.syscallState != 5){
             this.outputController.printMessage("Now is not input phase.\n");
         }else if(!regexp.test(text)){
             this.outputController.printMessage("Only a number will be accepted.\n");
         }else{
-            console.log("ok");
             this.registers[this.r2i["$v0"]].value = parseInt(text, 10);
             this.syscallState = 0;
             this.outputController.printMessage("Accept.\n");
             if(this.runState == 1){this.executeRun();}
         }
+    }
+
+    sa2i(address){  // stack address to index
+        return stackSize - Math.floor((stackStandard - address) / 4);
     }
 }

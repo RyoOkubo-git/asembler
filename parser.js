@@ -3,15 +3,16 @@ class Parser{
         this.lex = new Lexer();
         this.tokens;
         this.labels = {};
-        this.sp;
-        this.stack = new Array();
-        for(let i = 0; i < 100; i++){
-            this.stack.push(new StackData(0,"digit"));
+        
+        this.staticData = new Array();
+        for(let i = 0; i < dataSize; i++){
+            this.staticData.push(new StackData(0,"digit"));
         }
+        this.sdp;
         this.startLabel;
         this.pc;
         this.program = new Array();
-        for(let i = 0; i < 100; i++){
+        for(let i = 0; i < programSize; i++){
             this.program.push(new ProgData());
         }
     }
@@ -19,8 +20,9 @@ class Parser{
     parse(stream){
         this.lex.lexer(stream);
         this.tokens = this.lex.tokens;
-        this.sp = 4*99;
         this.pc = 0;
+        //this.pc = pcStandard;
+        this.sdp = dataStandard;
         while(this.tokens.length > 0){
             let tkn = this.tokens[0];
             switch(tkn.kind){
@@ -58,28 +60,32 @@ class Parser{
     }
 
     parseWordData(){
-        this.labels[this.tokens[0].value] = this.sp;
+        this.labels[this.tokens[0].value] = this.sdp;
         this.remToken(3);
         let tkn = this.tokens[0];
         if(tkn.kind != "digit"){throw new Error(`Parse Error, line: ${tkn.ln}`);}
-        this.stack[this.sp/4].value = parseInt(tkn.value, 10);
-        this.stack[this.sp/4].kind = "digit";
-        this.sp = this.sp - 4;
+        let address = Math.floor((this.sdp-dataStandard)/4);
+        this.checkStaticDataAddress(address);
+        this.staticData[address].value = parseInt(tkn.value, 10);
+        this.staticData[address].kind = "digit";
+        this.sdp = this.sdp + 4;
         this.remToken(1);
         while(this.tokens.length > 0 && this.tokens[0].kind == "comma"){
             if(this.tokens.length < 2 || this.tokens[1].kind != "digit"){
                 throw new Error(`Parse Error, line: ${tkn.ln}`);
             }
             tkn = this.tokens[1];
-            this.stack[this.sp / 4].value = parseInt(tkn.value, 10);
-            this.stack[this.sp / 4].kind = "digit";
-            this.sp = this.sp - 4;
+            address = Math.floor((this.sdp-dataStandard)/4);
+            this.checkStaticDataAddress(address);
+            this.staticData[address].value = parseInt(tkn.value, 10);
+            this.staticData[address].kind = "digit";
+            this.sdp = this.sdp + 4;
             this.remToken(2);
         }
     }
 
     parseAsciiData(){
-        this.labels[this.tokens[0].value] = this.sp;
+        this.labels[this.tokens[0].value] = this.sdp;
         this.remToken(3);
         const tkn = this.tokens[1];
         if(this.tokens[0].kind != "quotation" ||
@@ -88,6 +94,7 @@ class Parser{
             throw new Error(`Parse Error, line: ${tkn.ln}`);
         }
 
+        let address;
         const len = tkn.value.length;
         for(let i = 0; i < len; i++){
             if(tkn.value[i] == "\\"){
@@ -97,19 +104,29 @@ class Parser{
                     default:
                         throw new Error(`invalid escape character. line: ${tkn.ln}`);
                 }
-                this.stack[this.sp / 4].value = c;
-                this.stack[this.sp / 4].kind = "asciidata";
-                this.sp = this.sp - 4;
+                address = Math.floor((this.sdp-dataStandard)/4);
+                this.checkStaticDataAddress(address);
+                this.staticData[address].value = c;
+                this.staticData[address].kind = "asciidata";
+                this.sdp = this.sdp + 4;
             }else{
-                this.stack[this.sp / 4].value = tkn.value[i];
-                this.stack[this.sp / 4].kind = "asciidata";
-                this.sp = this.sp - 4;
+                address = Math.floor((this.sdp-dataStandard)/4);
+                this.checkStaticDataAddress(address);
+                this.staticData[address].value = tkn.value[i];
+                this.staticData[address].kind = "asciidata";
+                this.sdp = this.sdp + 4;
             }
         }
-        this.stack[this.sp / 4].value = "\0";
-        this.stack[this.sp / 4].kind = "asciidata";
-        this.sp = this.sp - 4;
+        address = Math.floor((this.sdp-dataStandard)/4);
+        this.checkStaticDataAddress(address);
+        this.staticData[address].value = "\0";
+        this.staticData[address].kind = "asciidata";
+        this.sdp = this.sdp + 4;
         this.remToken(3);
+    }
+
+    checkStaticDataAddress(address){
+        if(address < 0 || 49 < address){throw new Error(`Data segment overflow.`);}
     }
 
     parseText(){

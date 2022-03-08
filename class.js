@@ -5,22 +5,6 @@ class StackData{
         this.dst = 0;
         this.src = 0;
     }
-
-    get getValue(){
-        return this.value;
-    }
-
-    get getKind(){
-        return this.kind;
-    }
-
-    set setValue(v){
-        this.value = v;
-    }
-
-    set setKind(k){
-        this.kind = k;
-    }
 }
 
 class Instruction{
@@ -39,30 +23,6 @@ class ProgData{
         this.ln = -1;
         this.current = 0;
     }
-
-    get getLabel(){
-        return this.label;
-    }
-
-    get getInst(){
-        return this.inst;
-    }
-
-    get getLn(){
-        return this.ln;
-    }
-
-    set setLabel(label){
-        this.label = label;
-    }
-
-    set setInst(inst){
-        this.inst = inst;
-    }
-
-    set setLn(ln){
-        this.ln = ln;
-    }
 }
 
 class Token{
@@ -70,17 +30,6 @@ class Token{
         this.value = value;
         this.kind = kind;
         this.ln = ln;
-    }
-
-    get getValue(){
-        return this.value;
-    }
-
-    get getKind(){
-        return this.kind;
-    }
-    get getLn(){
-        return this.ln;
     }
 }
 

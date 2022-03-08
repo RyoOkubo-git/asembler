@@ -4,16 +4,16 @@ class OutputController{
         this.messageId = document.getElementById("message");
     }
 
-    makeAllTable(r, s, p, hi, lo, pc){
-        this.makeRegisterTable(r);
-        this.makeOtherRegisterTable(hi, lo, pc);
-        this.makeStackTable(s);
-        this.makeProgramTable(p);
+    rewriteAllTable(r, s, p, hi, lo, pc){
+        this.rewriteRegisterTable(r);
+        this.rewriteOtherRegisterTable(hi, lo, pc);
+        this.rewriteStackTable(s);
+        this.rewriteProgramTable(p);
     }
 
-    makeRegisterTable(registers){
+    rewriteRegisterTable(registers){
         let cellId;
-        for(let i = 0; i < 32; i++){
+        for(let i = 0; i < registerNum; i++){
             cellId = document.getElementById("registerTableCell"+String(i));
             cellId.innerHTML = registers[i].value;
             const dst = registers[i].dst;
@@ -32,10 +32,10 @@ class OutputController{
         }
     }
 
-    makeOtherRegisterTable(hi, lo, pc){
-        const cellIdHi = document.getElementById("registerTableCell"+String(32));
-        const cellIdLo = document.getElementById("registerTableCell"+String(33));
-        const cellIdPc = document.getElementById("registerTableCell"+String(34));
+    rewriteOtherRegisterTable(hi, lo, pc){
+        const cellIdHi = document.getElementById("registerTableCell"+String(registerNum));
+        const cellIdLo = document.getElementById("registerTableCell"+String(registerNum+1));
+        const cellIdPc = document.getElementById("registerTableCell"+String(registerNum+2));
         cellIdHi.innerHTML = hi.value;
         cellIdLo.innerHTML = lo.value;
         cellIdPc.innerHTML = pc;
@@ -56,9 +56,9 @@ class OutputController{
         hi.dst = hi.src = lo.dst = lo.src = 0;
     }
 
-    makeStackTable(stack){
+    rewriteStackTable(stack){
         let cellId;
-        for(let i = 0; i < 100; i++){
+        for(let i = 0; i < stackSize; i++){
             cellId = document.getElementById("stackTableData"+String(i));
             cellId.innerHTML = stack[i].value;
             const dst = stack[i].dst;
@@ -79,9 +79,9 @@ class OutputController{
         }
     }
 
-    makeProgramTable(program){
+    rewriteProgramTable(program){
         let cellId;
-        for(let i = 0; i < 100; i++){
+        for(let i = 0; i < programSize; i++){
             cellId = document.getElementById("programTableData"+String(i));
             const opt = program[i].inst.opt;
             const opd1 = program[i].inst.opd1;
