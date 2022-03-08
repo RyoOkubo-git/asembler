@@ -35,14 +35,12 @@ class Processor{
             this.syscallState = 0;
             this.execState = 1;
             this.runState = 0;
-            this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
+            this.outputController.loadAllTable(this.registers, this.program, this.hi, this.lo, this.pc);
             this.outputController.printMessage("Load.\n");
         } catch (error) {
             this.outputController.printMessage(error.message);
             console.error(error);
         }
-        console.log(this.parser.staticData);
-        console.log(this.parser.sdp.toString(16));
     }
 
     executeRun(){
