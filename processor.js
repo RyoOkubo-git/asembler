@@ -54,7 +54,7 @@ class Processor{
         }
         if(this.syscallState == 5){return;}
         this.runState = 0;
-        this.outputController.makeAllTable(this.registers, this.stack, this.program);
+        this.outputController.makeAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
         console.log(this.registers);
         console.log(this.stack);
         console.log(this.pc);
