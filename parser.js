@@ -19,7 +19,6 @@ class Parser{
     parse(stream){
         this.lex.lexer(stream);
         this.tokens = this.lex.tokens;
-        console.log(this.tokens);
         this.sp = 4*99;
         this.pc = 0;
         while(this.tokens.length > 0){

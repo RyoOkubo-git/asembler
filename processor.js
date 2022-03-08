@@ -23,20 +23,22 @@ class Processor{
     }
 
     loadInstructions(stream){
-        this.parser.parse(stream);
-        this.startLabel = this.parser.startLabel;
-        console.log(this.stack);
-        console.log(this.program);
-        console.log(this.labels);
-        console.log(this.startLabel);
-        this.registers[this.r2i["$sp"]].value = this.parser.sp;
-        this.pc = this.labels[this.startLabel];
-        this.registers[this.r2i["$ra"]].value = -1;
-        this.syscallState = 0;
-        this.execState = 1;
-        this.runState = 0;
-        this.outputController.makeAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
-        this.outputController.printMessage("Load.\n");
+        try {
+            this.parser.parse(stream);
+            this.startLabel = this.parser.startLabel;
+            this.registers[this.r2i["$sp"]].value = this.parser.sp;
+            this.pc = this.labels[this.startLabel];
+            this.registers[this.r2i["$ra"]].value = -1;
+            this.syscallState = 0;
+            this.execState = 1;
+            this.runState = 0;
+            this.outputController.makeAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
+            this.outputController.printMessage("Load.\n");
+        } catch (error) {
+            this.outputController.printMessage(error.message);
+            console.error(error);
+        }
+        
     }
 
     executeRun(){
