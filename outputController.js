@@ -1,14 +1,12 @@
 class OutputController{
     constructor(){
-        //his.registerTableId = r;
-        //this.stackTableId = s;
-        //this.programTableId = p;
         this.displayId = document.getElementById("display");
         this.messageId = document.getElementById("message");
     }
 
-    makeAllTable(r, s, p){
+    makeAllTable(r, s, p, hi, lo, pc){
         this.makeRegisterTable(r);
+        this.makeOtherRegisterTable(hi, lo, pc);
         this.makeStackTable(s);
         this.makeProgramTable(p);
     }
@@ -22,18 +20,40 @@ class OutputController{
             const src = registers[i].src;
             if(dst == 1 && src == 1){
                 cellId.style.backgroundColor = "#9370db";
-                registers[i].dst = 0;
-                registers[i].src = 0;
             }else if(dst == 1){
                 cellId.style.backgroundColor = "#ffc0cb";
-                registers[i].dst = 0;
             }else if(src == 1){
                 cellId.style.backgroundColor = "#7fffd4";
-                registers[i].src = 0;
             }else{
                 cellId.style.backgroundColor = "#ffffff";
             }
+            registers[i].dst = 0;
+            registers[i].src = 0;
         }
+    }
+
+    makeOtherRegisterTable(hi, lo, pc){
+        const cellIdHi = document.getElementById("registerTableCell"+String(32));
+        const cellIdLo = document.getElementById("registerTableCell"+String(33));
+        const cellIdPc = document.getElementById("registerTableCell"+String(34));
+        cellIdHi.innerHTML = hi.value;
+        cellIdLo.innerHTML = lo.value;
+        cellIdPc.innerHTML = pc;
+        if(hi.dst == 1){
+            cellIdHi.style.backgroundColor = "#ffc0cb";
+        }else if(hi.src == 1){
+            cellIdHi.style.backgroundColor = "#7fffd4";
+        }else{
+            cellIdHi.style.backgroundColor = "#ffffff";
+        }
+        if(lo.dst == 1){
+            cellIdLo.style.backgroundColor = "#ffc0cb";
+        }else if(lo.src == 1){
+            cellIdLo.style.backgroundColor = "#7fffd4";
+        }else{
+            cellIdLo.style.backgroundColor = "#ffffff";
+        }
+        hi.dst = hi.src = lo.dst = lo.src = 0;
     }
 
     makeStackTable(stack){

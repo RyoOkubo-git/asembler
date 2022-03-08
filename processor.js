@@ -35,7 +35,7 @@ class Processor{
         this.syscallState = 0;
         this.execState = 1;
         this.runState = 0;
-        this.outputController.makeAllTable(this.registers, this.stack, this.program);
+        this.outputController.makeAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
         this.outputController.printMessage("Load.\n");
     }
 
@@ -71,7 +71,7 @@ class Processor{
         }
         this.program[this.pc].current = 1;
         this.processInstruction(this.program[this.pc++].inst);
-        this.outputController.makeAllTable(this.registers, this.stack, this.program);
+        this.outputController.makeAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
         console.log(this.registers);
         console.log(this.stack);
         console.log(this.pc);
