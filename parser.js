@@ -153,6 +153,10 @@ class Parser{
             case "add" : inst = this.parseAdd(); break;
             case "addi" : inst = this.parseAddi(); break;
             case "sub" : inst = this.parseSub(); break;
+            case "mult" : inst = this.parseMult(); break;
+            case "div" : inst = this.parseDiv(); break;
+            case "mfhi" : inst = this.parseMfhi(); break;
+            case "mflo" : inst = this.parseMflo(); break;
             case "and" : inst = this.parseAnd(); break;
             case "andi" : inst = this.parseAndi(); break;
             case "or" : inst = this.parseOr(); break;
@@ -245,6 +249,50 @@ class Parser{
         }
         const inst = new Instruction("sub", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
+        return inst;
+    }
+
+    parseMult(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register"){
+                throw new Error(`wrong argument. "mult"`);   
+        }
+        const inst = new Instruction("mult", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
+        return inst;
+    }
+
+    parseDiv(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register"){
+                throw new Error(`wrong argument. "div"`);   
+        }
+        const inst = new Instruction("div", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
+        return inst;
+    }
+
+    parseMfhi(){
+        if(this.tokens.length == 0 ||
+            this.tokens[0].kind != "register"){
+                throw new Error(`wrong argument. "mfhi"`);   
+        }
+        const inst = new Instruction("mfhi", this.tokens[0].value, "", "");
+        this.remToken(1);
+        return inst;
+    }
+
+    parseMflo(){
+        if(this.tokens.length == 0 ||
+            this.tokens[0].kind != "register"){
+                throw new Error(`wrong argument. "mflo"`);   
+        }
+        const inst = new Instruction("mflo", this.tokens[0].value, "", "");
+        this.remToken(1);
         return inst;
     }
 
