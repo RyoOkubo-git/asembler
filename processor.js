@@ -92,6 +92,9 @@ class Processor{
             case "andi" : this.processAndi(inst); break;
             case "or" : this.processOr(inst); break;
             case "ori" : this.processOri(inst); break;
+            case "not" : this.processNot(inst); break;
+            case "xor" : this.processXor(inst); break;
+            case "xori" : this.processXori(inst); break;
             case "sll" : this.processSll(inst); break;
             case "srl" : this.processSrl(inst); break;
             case "sra" : this.processSra(inst); break;
@@ -255,6 +258,32 @@ class Processor{
         const reg1 = this.r2i[inst.opd1];
         const reg2 = this.r2i[inst.opd2];
         this.registers[reg1].value = this.registers[reg2].value | parseInt(inst.opd3, 10);
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+    }
+
+    processNot(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        this.registers[reg1].value = ~this.registers[reg2].value;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+    }
+
+    processXor(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        const reg3 = this.r2i[inst.opd3];
+        this.registers[reg1].value = this.registers[reg2].value ^ this.registers[reg3].value;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+        this.registers[reg3].src = 1;
+    }
+
+    processXori(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        this.registers[reg1].value = this.registers[reg2].value ^ parseInt(inst.opd3, 10);
         this.registers[reg1].dst = 1;
         this.registers[reg2].src = 1;
     }

@@ -161,6 +161,9 @@ class Parser{
             case "andi" : inst = this.parseAndi(); break;
             case "or" : inst = this.parseOr(); break;
             case "ori" : inst = this.parseOri(); break;
+            case "not" : inst = this.parseNot(); break;
+            case "xor" : inst = this.parseXor(); break;
+            case "xori" : inst = this.parseXori(); break;
             case "sll" : inst = this.parseSll(); break;
             case "srl" : inst = this.parseSrl(); break;
             case "sra" : inst = this.parseSra(); break;
@@ -348,6 +351,46 @@ class Parser{
                 throw new Error(`wrong argument. "ori"`);
         }
         const inst = new Instruction("ori", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseNot(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register"){
+                throw new Error(`wrong argument. "not"`);   
+        }
+        const inst = new Instruction("not", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
+        return inst;
+    }
+
+    parseXor(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "register"){
+                throw new Error(`wrong argument. "xor"`);
+        }
+        const inst = new Instruction("xor", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseXori(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "digit"){
+                throw new Error(`wrong argument. "xori"`);
+        }
+        const inst = new Instruction("xori", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
         return inst;
     }
