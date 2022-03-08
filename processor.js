@@ -101,6 +101,13 @@ class Processor{
             case "sw" : this.processSw(inst); break;
             case "lw" : this.processLw(inst); break;
             case "la" : this.processLa(inst); break;
+            case "slt" : this.processSlt(inst); break;
+            case "slti" : this.processSlti(inst); break;
+            case "seq" : this.processSeq(inst); break;
+            case "sge" : this.processSge(inst); break;
+            case "sgt" : this.processSgt(inst); break;
+            case "sle" : this.processSle(inst); break;
+            case "sne" : this.processSne(inst); break;
             case "beq" : this.processBeq(inst); break;
             case "bne" : this.processBne(inst); break;
             case "b" : this.processB(inst); break;
@@ -338,6 +345,74 @@ class Processor{
         if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
         this.registers[reg1].value = this.labels[inst.opd2];
         this.registers[reg1].dst = 1;
+    }
+
+    processSlt(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        const reg3 = this.r2i[inst.opd3];
+        this.registers[reg1].value = (this.registers[reg2].value < this.registers[reg3].value) ? 1 : 0;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+        this.registers[reg3].src = 1;
+    }
+
+    processSlti(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        this.registers[reg1].value = (this.registers[reg2].value < parseInt(inst.opd3, 10)) ? 1 : 0;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+    }
+
+    processSeq(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        const reg3 = this.r2i[inst.opd3];
+        this.registers[reg1].value = (this.registers[reg2].value == this.registers[reg3].value) ? 1 : 0;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+        this.registers[reg3].src = 1;
+    }
+
+    processSge(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        const reg3 = this.r2i[inst.opd3];
+        this.registers[reg1].value = (this.registers[reg2].value >= this.registers[reg3].value) ? 1 : 0;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+        this.registers[reg3].src = 1;
+    }
+
+    processSgt(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        const reg3 = this.r2i[inst.opd3];
+        this.registers[reg1].value = (this.registers[reg2].value > this.registers[reg3].value) ? 1 : 0;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+        this.registers[reg3].src = 1;
+    }
+
+    processSle(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        const reg3 = this.r2i[inst.opd3];
+        this.registers[reg1].value = (this.registers[reg2].value <= this.registers[reg3].value) ? 1 : 0;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+        this.registers[reg3].src = 1;
+    }
+
+    processSne(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        const reg3 = this.r2i[inst.opd3];
+        this.registers[reg1].value = (this.registers[reg2].value != this.registers[reg3].value) ? 1 : 0;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
+        this.registers[reg3].src = 1;
     }
 
     processBeq(inst){

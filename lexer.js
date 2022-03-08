@@ -73,6 +73,8 @@ class Lexer{
             case "not" : case "xor" : case "xori":
             case "sll" : case "srl" : case "sra" :
             case "sw" : case "lw" : case "la" :
+            case "slt" : case "slti" : case "seq" : case "sge":
+            case "sgt" : case "sle" : case "sne":
             case "beq" : case "bne" : case "b" :
             case "j" : case "jr" : case "jal" :
                 this.tokens.push(new Token(tid, "opt", this.ln)); break;

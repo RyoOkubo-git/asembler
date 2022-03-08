@@ -170,6 +170,13 @@ class Parser{
             case "sw" : inst = this.parseSw(); break;
             case "lw" : inst = this.parseLw(); break;
             case "la" : inst = this.parseLa(); break;
+            case "slt" : inst = this.parseSlt(); break;
+            case "slti" : inst = this.parseSlti(); break;
+            case "seq" : inst = this.parseSeq(); break;
+            case "sge" : inst = this.parseSge(); break;
+            case "sgt" : inst = this.parseSgt(); break;
+            case "sle" : inst = this.parseSle(); break;
+            case "sne" : inst = this.parseSne(); break;
             case "beq" : inst = this.parseBeq(); break;
             case "bne" : inst = this.parseBne(); break;
             case "b" : inst = this.parseB(); break;
@@ -476,6 +483,104 @@ class Parser{
         }
         const inst = new Instruction("la", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
+        return inst;
+    }
+
+    parseSlt(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "register"){
+                throw new Error(`wrong argument. "slt"`);
+        }
+        const inst = new Instruction("slt", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseSlti(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "digit"){
+                throw new Error(`wrong argument. "slti"`);
+        }
+        const inst = new Instruction("slti", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseSeq(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "register"){
+                throw new Error(`wrong argument. "seq"`);
+        }
+        const inst = new Instruction("seq", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseSge(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "register"){
+                throw new Error(`wrong argument. "sge"`);
+        }
+        const inst = new Instruction("sge", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseSgt(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "register"){
+                throw new Error(`wrong argument. "sgt"`);
+        }
+        const inst = new Instruction("sgt", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseSle(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "register"){
+                throw new Error(`wrong argument. "sle"`);
+        }
+        const inst = new Instruction("sle", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseSne(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "register"){
+                throw new Error(`wrong argument. "sne"`);
+        }
+        const inst = new Instruction("sne", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
         return inst;
     }
 
