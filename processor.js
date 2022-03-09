@@ -36,12 +36,10 @@ class Processor{
             this.syscallState = 0;
             this.execState = 1;
             this.runState = 0;
-            this.outputController.loadAllTable(this.registers, this.program, this.hi, this.lo, this.pc);
+            this.outputController.loadAllTable(this.registers, this.staticData, this.program, this.hi, this.lo, this.pc);
             this.outputController.printMessage("Load.\n");
-            console.log(this.labels);
         } catch (error) {
             this.outputController.printMessage(error.message);
-            console.error(error);
         }
     }
 
@@ -466,7 +464,6 @@ class Processor{
         this.registers[this.r2i["$ra"]].value = this.pc;
         this.registers[this.r2i["$ra"]].dst = 1;
         this.pc = this.labels[inst.opd1];
-        console.log(this.pc);
     }
 
     processSyscall(){

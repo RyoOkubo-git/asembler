@@ -2,8 +2,26 @@ class OutputController{
     constructor(){
         this.displayId = document.getElementById("display");
         this.messageId = document.getElementById("message");
+        this.makeDataTable();
         this.makeStackTable();
         this.makeProgramTable();
+    }
+
+    makeDataTable(){
+        let dataTableId = document.getElementById('dataTable');
+        for(let i=0; i<dataSize; i++){
+            let tr = document.createElement('tr');
+            let td1 = document.createElement('td');
+            let td2 = document.createElement('td');
+            td1.innerHTML = "0x" + (dataStandard+4*i).toString(16);
+            td2.innerHTML = "0";
+            td2.id="dataTableAddress"+String(i);
+            td2.id="dataTableData"+String(i);
+            td2.align="center";
+            tr.appendChild(td1);
+            tr.appendChild(td2);
+            dataTableId.appendChild(tr);
+        }
     }
 
     makeStackTable(){
@@ -39,9 +57,10 @@ class OutputController{
         }
     }
 
-    loadAllTable(r, p, hi, lo, pc){
+    loadAllTable(r, d, p, hi, lo, pc){
         this.loadRegisterTable(r);
         this.loadOtherRegisterTable(hi, lo, pc);
+        this.loadDataTable(d);
         this.loadProgramTable(p);
     }
 
@@ -60,6 +79,22 @@ class OutputController{
         cellIdPc.innerHTML = this.d2x(pc);
         cellIdHi.innerHTML = this.d2x(hi.value);
         cellIdLo.innerHTML = this.d2x(lo.value);        
+    }
+
+    loadDataTable(staticData){
+        let cellId, kind, value;
+        for(let i = 0; i < dataSize; i++){
+            cellId = document.getElementById("dataTableData"+String(i));
+            kind = staticData[i].kind;
+            value = staticData[i].value;
+            if(kind == "asciidata" && value == "\n"){
+                cellId.innerHTML = "\\n";
+            }else if(kind == "asciidata" && value == "\0"){
+                cellId.innerHTML = "\\0";
+            }else{
+                cellId.innerHTML = value;
+            }
+        }
     }
 
     loadProgramTable(program){
