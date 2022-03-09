@@ -53,14 +53,22 @@ class OutputController{
             let tr = document.createElement('tr');
             let th = document.createElement('th');
             let td = document.createElement('td');
+            let tdPc = document.createElement('td');
+            let tdLabel = document.createElement('td');
+            tdPc.classList.add("td-arrow");
             th.innerHTML = "0x" + (pcStandard + 4*i).toString(16);
             th.classList.add("th-cssNoneBorder");
             td.classList.add("td-program");
             td.innerHTML = String("");
-            td.id = "programTableAddress"+String(i);
-            td.id = "programTableData"+String(i);
+            tdLabel.classList.add("td-label");
+            tdPc.id = "programTableArrow" + String(i);
+            td.id = "programTableAddress" + String(i);
+            td.id = "programTableData" + String(i);
+            tdLabel.id = "programTableLabel" + String(i);
+            tr.appendChild(tdPc);
             tr.appendChild(th);
             tr.appendChild(td);
+            tr.appendChild(tdLabel);
             programTableId.appendChild(tr);
         }
     }
@@ -69,7 +77,7 @@ class OutputController{
         this.loadRegisterTable(r);
         this.loadOtherRegisterTable(hi, lo, pc);
         this.loadDataTable(d);
-        this.loadProgramTable(p);
+        this.loadProgramTable(p, pc);
     }
 
     loadRegisterTable(registers){
@@ -105,7 +113,7 @@ class OutputController{
         }
     }
 
-    loadProgramTable(program){
+    loadProgramTable(program, pc){
         let cellId;
         for(let i = 0; i < programSize; i++){
             cellId = document.getElementById("programTableData" + String(i));
@@ -126,6 +134,14 @@ class OutputController{
                 str = `${opt} ${opd1}, ${opd2}, ${opd3}`
             }
             cellId.innerHTML = str;
+            cellId = document.getElementById("programTableLabel" + String(i));
+            cellId.innerHTML = program[i].label;
+            cellId = document.getElementById("programTableArrow" + String(i));
+            if(pc == pcStandard + 4*i){
+                cellId.innerHTML = "pc → ";
+            }else{
+                cellId.innerHTML = ""
+            }
         }
     }
 
@@ -133,7 +149,7 @@ class OutputController{
         this.rewriteRegisterTable(r);
         this.rewriteOtherRegisterTable(hi, lo, pc);
         this.rewriteStackTable(s, r[29].value);
-        this.highlightProgramTable(p);
+        this.highlightProgramTable(p, pc);
     }
 
     rewriteRegisterTable(registers){
@@ -230,15 +246,21 @@ class OutputController{
         }
     }
 
-    highlightProgramTable(program){
+    highlightProgramTable(program, pc){
         let cellId;
         for(let i = 0; i < programSize; i++){
-            cellId = document.getElementById("programTableData"+String(i));
+            cellId = document.getElementById("programTableData" + String(i));
             if(program[i].current == 1){
                 cellId.style.backgroundColor = "#ffd700";
                 program[i].current = 0;
             }else{
                 cellId.style.backgroundColor = "#ffffff";
+            }
+            cellId = document.getElementById("programTableArrow" + String(i));
+            if(pc == pcStandard + 4*i){
+                cellId.innerHTML = "pc → ";
+            }else{
+                cellId.innerHTML = ""
             }
         }
     }
