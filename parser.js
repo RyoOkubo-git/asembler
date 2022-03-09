@@ -20,8 +20,8 @@ class Parser{
     parse(stream){
         this.lex.lexer(stream);
         this.tokens = this.lex.tokens;
-        this.pc = 0;
-        //this.pc = pcStandard;
+        //this.pc = 0;
+        this.pc = pcStandard;
         this.sdp = dataStandard;
         while(this.tokens.length > 0){
             let tkn = this.tokens[0];
@@ -64,10 +64,10 @@ class Parser{
         this.remToken(3);
         let tkn = this.tokens[0];
         if(tkn.kind != "digit"){throw new Error(`Parse Error, line: ${tkn.ln}`);}
-        let address = Math.floor((this.sdp-dataStandard)/4);
-        this.checkStaticDataAddress(address);
-        this.staticData[address].value = parseInt(tkn.value, 10);
-        this.staticData[address].kind = "digit";
+        let dataIdx = Math.floor((this.sdp-dataStandard)/4);
+        this.checkStaticDataIndex(dataIdx);
+        this.staticData[dataIdx].value = parseInt(tkn.value, 10);
+        this.staticData[dataIdx].kind = "digit";
         this.sdp = this.sdp + 4;
         this.remToken(1);
         while(this.tokens.length > 0 && this.tokens[0].kind == "comma"){
@@ -75,10 +75,10 @@ class Parser{
                 throw new Error(`Parse Error, line: ${tkn.ln}`);
             }
             tkn = this.tokens[1];
-            address = Math.floor((this.sdp-dataStandard)/4);
-            this.checkStaticDataAddress(address);
-            this.staticData[address].value = parseInt(tkn.value, 10);
-            this.staticData[address].kind = "digit";
+            dataIdx = Math.floor((this.sdp-dataStandard)/4);
+            this.checkStaticDataIndex(dataIdx);
+            this.staticData[dataIdx].value = parseInt(tkn.value, 10);
+            this.staticData[dataIdx].kind = "digit";
             this.sdp = this.sdp + 4;
             this.remToken(2);
         }
@@ -94,7 +94,7 @@ class Parser{
             throw new Error(`Parse Error, line: ${tkn.ln}`);
         }
 
-        let address;
+        let dataIdx;
         const len = tkn.value.length;
         for(let i = 0; i < len; i++){
             if(tkn.value[i] == "\\"){
@@ -104,29 +104,29 @@ class Parser{
                     default:
                         throw new Error(`invalid escape character. line: ${tkn.ln}`);
                 }
-                address = Math.floor((this.sdp-dataStandard)/4);
-                this.checkStaticDataAddress(address);
-                this.staticData[address].value = c;
-                this.staticData[address].kind = "asciidata";
+                dataIdx = Math.floor((this.sdp-dataStandard)/4);
+                this.checkStaticDataIndex(dataIdx);
+                this.staticData[dataIdx].value = c;
+                this.staticData[dataIdx].kind = "asciidata";
                 this.sdp = this.sdp + 4;
             }else{
-                address = Math.floor((this.sdp-dataStandard)/4);
-                this.checkStaticDataAddress(address);
-                this.staticData[address].value = tkn.value[i];
-                this.staticData[address].kind = "asciidata";
+                dataIdx = Math.floor((this.sdp-dataStandard)/4);
+                this.checkStaticDataIndex(dataIdx);
+                this.staticData[dataIdx].value = tkn.value[i];
+                this.staticData[dataIdx].kind = "asciidata";
                 this.sdp = this.sdp + 4;
             }
         }
-        address = Math.floor((this.sdp-dataStandard)/4);
-        this.checkStaticDataAddress(address);
-        this.staticData[address].value = "\0";
-        this.staticData[address].kind = "asciidata";
+        dataIdx = Math.floor((this.sdp-dataStandard)/4);
+        this.checkStaticDataIndex(dataIdx);
+        this.staticData[dataIdx].value = "\0";
+        this.staticData[dataIdx].kind = "asciidata";
         this.sdp = this.sdp + 4;
         this.remToken(3);
     }
 
-    checkStaticDataAddress(address){
-        if(address < 0 || 49 < address){throw new Error(`Data segment overflow.`);}
+    checkStaticDataIndex(dataIdx){
+        if(dataIdx < 0 || 49 < dataIdx){throw new Error(`Data segment overflow.`);}
     }
 
     parseText(){
@@ -202,9 +202,11 @@ class Parser{
             default:
                 throw new Error(`Parse Error. line: ${optToken.ln}`)
         }
-        this.program[this.pc].label = label;
-        this.program[this.pc].inst = inst;
-        this.program[this.pc++].ln = optToken.ln;
+        const programIdx = Math.floor((this.pc - pcStandard) / 4);
+        this.program[programIdx].label = label;
+        this.program[programIdx].inst = inst;
+        this.program[programIdx].ln = optToken.ln;
+        this.pc = this.pc + 4;
     }
 
     parseLi(){

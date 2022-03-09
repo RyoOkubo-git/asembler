@@ -6,6 +6,7 @@ class Processor{
         for(let i = 0; i < stackSize; i++){
             this.stack.push(new StackData(0,"digit"));
         }
+        this.staticData = this.parser.staticData;
         this.program = this.parser.program;
         this.startLabel;
         this.pc; 
@@ -37,6 +38,7 @@ class Processor{
             this.runState = 0;
             this.outputController.loadAllTable(this.registers, this.program, this.hi, this.lo, this.pc);
             this.outputController.printMessage("Load.\n");
+            console.log(this.labels);
         } catch (error) {
             this.outputController.printMessage(error.message);
             console.error(error);
@@ -44,6 +46,7 @@ class Processor{
     }
 
     executeRun(){
+        let programIdx;
         this.runState = 1;
         if(this.execState == 0){
             this.outputController.printMessage("Program is not executable state.\n");
@@ -54,7 +57,9 @@ class Processor{
             return;
         }
         while(this.execState == 1 && this.syscallState != 5){
-            this.processInstruction(this.program[this.pc++].inst);
+            programIdx = this.pa2i(this.pc);
+            this.processInstruction(this.program[programIdx].inst);
+            this.pc = this.pc + 4;
         }
         if(this.syscallState == 5){return;}
         this.runState = 0;
@@ -70,8 +75,10 @@ class Processor{
             this.outputController.printMessage("Input Integer and click button.\n");
             return;
         }
-        this.program[this.pc].current = 1;
-        this.processInstruction(this.program[this.pc++].inst);
+        const programIdx = this.pa2i(this.pc);
+        this.program[programIdx].current = 1;
+        this.pc = this.pc + 4;
+        this.processInstruction(this.program[programIdx].inst);
         this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
     }
 
@@ -449,7 +456,7 @@ class Processor{
         const reg1 = this.r2i[inst.opd1];
         const address = this.registers[reg1].value;
         if(address < 0){ this.execState = 0; return;/* program terminate */ }
-        if(99 < address){throw new Error(`invalid access. "pc = ${inst.opd1}"`);}
+        if(address < pcStandard || pcStandard + 4*programSize <= address){throw new Error("invalid access. 0x" + address.toString(16));}
         this.pc = address;
         this.registers[reg1].src = 1;
     }
@@ -457,7 +464,9 @@ class Processor{
     processJal(inst){
         if(!(inst.opd1 in this.labels)){throw new Error(`No such label. "${inst.opd1}"`);}
         this.registers[this.r2i["$ra"]].value = this.pc;
+        this.registers[this.r2i["$ra"]].dst = 1;
         this.pc = this.labels[inst.opd1];
+        console.log(this.pc);
     }
 
     processSyscall(){
@@ -473,14 +482,16 @@ class Processor{
 
     makeString(){
         let address = this.registers[this.r2i["$a0"]].value;
-        if(address < dataStandard || dataStandard + 4*dataSize > address){throw new Error(`out of data segment`)}
+        if(address < dataStandard || dataStandard + 4*dataSize < address){throw new Error(`out of data segment`)}
         let str = "";
-        let c = this.stack[address / 4];
+        let dataIdx = this.da2i(address);
+        let c = this.staticData[dataIdx];
         while(c.value != "\0"){
             if(c.kind != "asciidata"){throw new Error(`This is not character`)}
             str = str + c.value;
-            address = address - 4;
-            c = this.stack[address / 4];
+            address = address + 4;
+            dataIdx = this.da2i(address);
+            c = this.staticData[dataIdx];
         }
         return str;
     }
@@ -501,6 +512,14 @@ class Processor{
             this.outputController.printMessage("Accept.\n");
             if(this.runState == 1){this.executeRun();}
         }
+    }
+
+    da2i(address){  //data address to index
+        return Math.floor((address - dataStandard) / 4);
+    }
+
+    pa2i(address){  //program address to index
+        return Math.floor((address - pcStandard) / 4);
     }
 
     sa2i(address){  // stack address to index

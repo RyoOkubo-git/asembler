@@ -49,7 +49,7 @@ class OutputController{
         let cellId;
         for(let i = 0; i < registerNum; i++){
             cellId = document.getElementById("registerTableCell"+String(i));           
-            cellId.innerHTML = this.b2x(registers[i].value);
+            cellId.innerHTML = this.d2x(registers[i].value);
         }
     }
 
@@ -57,9 +57,9 @@ class OutputController{
         const cellIdHi = document.getElementById("registerTableCell"+String(registerNum));
         const cellIdLo = document.getElementById("registerTableCell"+String(registerNum+1));
         const cellIdPc = document.getElementById("registerTableCell"+String(registerNum+2));        
-        cellIdPc.innerHTML = pc;
-        cellIdHi.innerHTML = hi.value;
-        cellIdLo.innerHTML = lo.value;        
+        cellIdPc.innerHTML = this.d2x(pc);
+        cellIdHi.innerHTML = this.d2x(hi.value);
+        cellIdLo.innerHTML = this.d2x(lo.value);        
     }
 
     loadProgramTable(program){
@@ -100,10 +100,10 @@ class OutputController{
             const dst = registers[i].dst;
             const src = registers[i].src;
             if(dst == 1 && src == 1){
-                cellId.innerHTML = this.b2x(registers[i].value);
+                cellId.innerHTML = this.d2x(registers[i].value);
                 cellId.style.backgroundColor = "#9370db";
             }else if(dst == 1){
-                cellId.innerHTML = this.b2x(registers[i].value);
+                cellId.innerHTML = this.d2x(registers[i].value);
                 cellId.style.backgroundColor = "#ffc0cb";
             }else if(src == 1){
                 cellId.style.backgroundColor = "#7fffd4";
@@ -119,9 +119,9 @@ class OutputController{
         const cellIdHi = document.getElementById("registerTableCell"+String(registerNum));
         const cellIdLo = document.getElementById("registerTableCell"+String(registerNum+1));
         const cellIdPc = document.getElementById("registerTableCell"+String(registerNum+2));        
-        cellIdPc.innerHTML = pc;
+        cellIdPc.innerHTML = this.d2x(pc);
         if(hi.dst == 1){
-            cellIdHi.innerHTML = hi.value;
+            cellIdHi.innerHTML = this.d2x(hi.value);
             cellIdHi.style.backgroundColor = "#ffc0cb";
         }else if(hi.src == 1){
             cellIdHi.style.backgroundColor = "#7fffd4";
@@ -129,7 +129,7 @@ class OutputController{
             cellIdHi.style.backgroundColor = "#ffffff";
         }
         if(lo.dst == 1){
-            cellIdLo.innerHTML = lo.value;
+            cellIdLo.innerHTML = this.d2x(lo.value);
             cellIdLo.style.backgroundColor = "#ffc0cb";
         }else if(lo.src == 1){
             cellIdLo.style.backgroundColor = "#7fffd4";
@@ -146,10 +146,10 @@ class OutputController{
             const dst = stack[i].dst;
             const src = stack[i].src;
             if(dst == 1 && src == 1){
-                cellId.innerHTML = stack[i].value;
+                cellId.innerHTML = this.d2x(stack[i].value);
                 cellId.style.backgroundColor = "#9370db";
             }else if(dst == 1){
-                cellId.innerHTML = stack[i].value;
+                cellId.innerHTML = this.d2x(stack[i].value);
                 cellId.style.backgroundColor = "#ffc0cb";
             }else if(src == 1){
                 cellId.style.backgroundColor = "#7fffd4";
@@ -161,8 +161,8 @@ class OutputController{
         }
     }
 
-    b2x(val){
-        if((stackStandard - 4*stackSize <= val && val < stackStandard) ||
+    d2x(val){
+        if((stackStandard - 4*stackSize <= val && val <= stackStandard) ||
             (dataStandard <= val && val < dataStandard + 4*dataSize) ||
             (pcStandard <= val && val < pcStandard + 4*programSize)){
                 return "0x" + val.toString(16)
