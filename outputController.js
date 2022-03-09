@@ -11,32 +11,38 @@ class OutputController{
         let dataTableId = document.getElementById('dataTable');
         for(let i=0; i<dataSize; i++){
             let tr = document.createElement('tr');
-            let td1 = document.createElement('td');
-            let td2 = document.createElement('td');
-            td1.innerHTML = "0x" + (dataStandard+4*i).toString(16);
-            td2.innerHTML = "0";
-            td2.id="dataTableAddress"+String(i);
-            td2.id="dataTableData"+String(i);
-            td2.align="center";
-            tr.appendChild(td1);
-            tr.appendChild(td2);
+            let th = document.createElement('th');
+            let td = document.createElement('td');
+            th.innerHTML = "0x" + (dataStandard+4*i).toString(16);
+            th.classList.add("th-cssNoneBorder");
+            td.innerHTML = "0";
+            td.classList.add("td-data");
+            td.id="dataTableAddress"+String(i);
+            td.id="dataTableData"+String(i);
+            tr.appendChild(th);
+            tr.appendChild(td);
             dataTableId.appendChild(tr);
         }
     }
 
     makeStackTable(){
         let stackTableId = document.getElementById('stackTable');
-        for(let i=0; i<stackSize; i++){
+        for(let i=0; i<=stackSize; i++){
             let tr = document.createElement('tr');
-            let td1 = document.createElement('td');
-            let td2 = document.createElement('td');
-            td1.innerHTML = "0x" + (stackStandard-4*(stackSize-i)).toString(16);
-            td2.innerHTML = "0";
-            td2.id="stackTableAddress"+String(i);
-            td2.id="stackTableData"+String(i);
-            td2.align="center";
-            tr.appendChild(td1);
-            tr.appendChild(td2);
+            let th = document.createElement('th');
+            let td = document.createElement('td');
+            let tdSp = document.createElement('td');
+            tdSp.classList.add("td-arrow");
+            th.innerHTML = "0x" + (stackStandard-4*(stackSize-i)).toString(16);
+            th.classList.add("th-cssNoneBorder");
+            td.innerHTML = "0";
+            td.classList.add("td-data");
+            tdSp.id = "stackTableArrow" + String(i);
+            td.id="stackTableAddress" + String(i);
+            td.id="stackTableData" + String(i);
+            tr.appendChild(tdSp);
+            tr.appendChild(th);
+            tr.appendChild(td);
             stackTableId.appendChild(tr);
         }
     }
@@ -45,14 +51,16 @@ class OutputController{
         let programTableId = document.getElementById('programTable');
         for(let i = 0; i < programSize; i++){
             let tr = document.createElement('tr');
-            let td1 = document.createElement('td');
-            let td2 = document.createElement('td');
-            td1.innerHTML = "0x" + (pcStandard + 4*i).toString(16);
-            td2.innerHTML = String("");
-            td2.id = "programTableAddress"+String(i);
-            td2.id = "programTableData"+String(i);
-            tr.appendChild(td1);
-            tr.appendChild(td2);
+            let th = document.createElement('th');
+            let td = document.createElement('td');
+            th.innerHTML = "0x" + (pcStandard + 4*i).toString(16);
+            th.classList.add("th-cssNoneBorder");
+            td.classList.add("td-program");
+            td.innerHTML = String("");
+            td.id = "programTableAddress"+String(i);
+            td.id = "programTableData"+String(i);
+            tr.appendChild(th);
+            tr.appendChild(td);
             programTableId.appendChild(tr);
         }
     }
@@ -124,7 +132,7 @@ class OutputController{
     rewriteAllTable(r, s, p, hi, lo, pc){
         this.rewriteRegisterTable(r);
         this.rewriteOtherRegisterTable(hi, lo, pc);
-        this.rewriteStackTable(s);
+        this.rewriteStackTable(s, r[29].value);
         this.highlightProgramTable(p);
     }
 
@@ -174,10 +182,16 @@ class OutputController{
         hi.dst = hi.src = lo.dst = lo.src = 0;
     }
 
-    rewriteStackTable(stack){
+    rewriteStackTable(stack, address){
+        const spIdx = stackSize - Math.floor((stackStandard - address) / 4);
         let cellId;
         for(let i = 0; i < stackSize; i++){
             cellId = document.getElementById("stackTableData"+String(i));
+            if(i < spIdx){
+                cellId.style.backgroundColor = "#c0c0c0";
+            }else{
+                cellId.style.backgroundColor = "#ffffff";
+            }
             const dst = stack[i].dst;
             const src = stack[i].src;
             if(dst == 1 && src == 1){
@@ -188,11 +202,21 @@ class OutputController{
                 cellId.style.backgroundColor = "#ffc0cb";
             }else if(src == 1){
                 cellId.style.backgroundColor = "#7fffd4";
-            }else{
-                cellId.style.backgroundColor = "#ffffff";
             }
             stack[i].dst = 0;
             stack[i].src = 0;
+            cellId = document.getElementById("stackTableArrow"+i);
+            if(spIdx == i){
+                cellId.innerHTML = "sp → ";
+            }else{
+                cellId.innerHTML = ""
+            }
+        }
+        cellId = document.getElementById("stackTableArrow"+stackSize);
+        if(spIdx == stackSize){
+            cellId.innerHTML = "sp → ";
+        }else{
+            cellId.innerHTML = ""
         }
     }
 

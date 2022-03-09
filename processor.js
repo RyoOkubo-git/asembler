@@ -56,8 +56,8 @@ class Processor{
         }
         while(this.execState == 1 && this.syscallState != 5){
             programIdx = this.pa2i(this.pc);
-            this.processInstruction(this.program[programIdx].inst);
             this.pc = this.pc + 4;
+            this.processInstruction(this.program[programIdx].inst);
         }
         if(this.syscallState == 5){return;}
         this.runState = 0;
