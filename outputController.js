@@ -4,6 +4,12 @@ class OutputController{
         this.messageId = document.getElementById("message");
         this.programPartId = document.getElementById("programPart");
         this.stackPartId = document.getElementById("stackPart");
+        this.colorWhite = "#ffffff";
+        this.colorRed = "#ffc0cb";
+        this.colorBlue = "#e0ffff";
+        this.colorPurple = "#9370db";
+        this.colorGray = "#c0c0c0";
+        this.colorYellow = "#ffd700";
         this.makeDataTable();
         this.makeStackTable();
         this.makeProgramTable();
@@ -46,7 +52,7 @@ class OutputController{
             tr.appendChild(th);
             tr.appendChild(td);
             stackTableId.appendChild(tr);
-            document.getElementById("stackTableData" + String(i)).style.backgroundColor = "#c0c0c0"
+            document.getElementById("stackTableData" + String(i)).style.backgroundColor = this.colorGray
         }
         document.getElementById("stackTableData" + String(stackSize)).style.backgroundColor = "#000000";
     }
@@ -171,14 +177,14 @@ class OutputController{
             const src = registers[i].src;
             if(dst == 1 && src == 1){
                 cellId.innerHTML = this.d2x(registers[i].value);
-                cellId.style.backgroundColor = "#9370db";
+                cellId.style.backgroundColor = this.colorPurple;
             }else if(dst == 1){
                 cellId.innerHTML = this.d2x(registers[i].value);
-                cellId.style.backgroundColor = "#ffc0cb";
+                cellId.style.backgroundColor = this.colorRed;
             }else if(src == 1){
-                cellId.style.backgroundColor = "#e0ffff";
+                cellId.style.backgroundColor = this.colorBlue;
             }else{
-                cellId.style.backgroundColor = "#ffffff";
+                cellId.style.backgroundColor = this.colorWhite;
             }
             registers[i].dst = 0;
             registers[i].src = 0;
@@ -192,19 +198,19 @@ class OutputController{
         cellIdPc.innerHTML = this.d2x(pc);
         if(hi.dst == 1){
             cellIdHi.innerHTML = this.d2x(hi.value);
-            cellIdHi.style.backgroundColor = "#ffc0cb";
+            cellIdHi.style.backgroundColor = this.colorRed;
         }else if(hi.src == 1){
-            cellIdHi.style.backgroundColor = "#e0ffff";
+            cellIdHi.style.backgroundColor = this.colorBlue;
         }else{
-            cellIdHi.style.backgroundColor = "#ffffff";
+            cellIdHi.style.backgroundColor = this.colorWhite;
         }
         if(lo.dst == 1){
             cellIdLo.innerHTML = this.d2x(lo.value);
-            cellIdLo.style.backgroundColor = "#ffc0cb";
+            cellIdLo.style.backgroundColor = this.colorRed;
         }else if(lo.src == 1){
-            cellIdLo.style.backgroundColor = "#e0ffff";
+            cellIdLo.style.backgroundColor = this.colorBlue;
         }else{
-            cellIdLo.style.backgroundColor = "#ffffff";
+            cellIdLo.style.backgroundColor = this.colorWhite;
         }
     }
 
@@ -214,22 +220,22 @@ class OutputController{
         for(let i = 0; i < stackSize; i++){
             cellId = document.getElementById("stackTableData"+String(i));
             if(i < spIdx){
-                cellId.style.backgroundColor = "#c0c0c0";
+                cellId.style.backgroundColor = this.colorGray;
             }else{
-                cellId.style.backgroundColor = "#ffffff";
+                cellId.style.backgroundColor = this.colorWhite;
             }
             const dst = stack[i].dst;
             const src = stack[i].src;
             if(dst == 1 && src == 1){
                 cellId.innerHTML = this.d2x(stack[i].value);
-                cellId.style.backgroundColor = "#9370db";
+                cellId.style.backgroundColor = this.colorPurple;
                 this.stackPartId.scrollTo(0, cellId.getBoundingClientRect().top + this.stackPartId.scrollTop - document.documentElement.clientHeight/2);
             }else if(dst == 1){
                 cellId.innerHTML = this.d2x(stack[i].value);
-                cellId.style.backgroundColor = "#ffc0cb";
+                cellId.style.backgroundColor = this.colorRed;
                 this.stackPartId.scrollTo(0, cellId.getBoundingClientRect().top + this.stackPartId.scrollTop - document.documentElement.clientHeight/2);
             }else if(src == 1){
-                cellId.style.backgroundColor = "#e0ffff";
+                cellId.style.backgroundColor = this.colorBlue;
                 this.stackPartId.scrollTo(0, cellId.getBoundingClientRect().top + this.stackPartId.scrollTop - document.documentElement.clientHeight/2);
             }
             stack[i].dst = 0;
@@ -254,11 +260,11 @@ class OutputController{
         for(let i = 0; i < programSize; i++){
             cellId = document.getElementById("programTableData" + String(i));
             if(program[i].current == 1){
-                cellId.style.backgroundColor = "#ffd700";
+                cellId.style.backgroundColor = this.colorYellow;
                 program[i].current = 0;
                 this.programPartId.scrollTo(0, cellId.getBoundingClientRect().top + this.programPartId.scrollTop - document.documentElement.clientHeight/2);
             }else{
-                cellId.style.backgroundColor = "#ffffff";
+                cellId.style.backgroundColor = this.colorWhite;
             }
             cellId = document.getElementById("programTableArrow" + String(i));
             if(pc == pcStandard + 4*i){
@@ -300,9 +306,9 @@ class OutputController{
         for(let i = 0; i < stackSize; i++){
             cellId = document.getElementById("stackTableData"+String(i));
             if(i < spIdx){
-                cellId.style.backgroundColor = "#c0c0c0";
+                cellId.style.backgroundColor = this.colorGray;
             }else{
-                cellId.style.backgroundColor = "#ffffff";
+                cellId.style.backgroundColor = this.colorWhite;
             }
             cellId.innerHTML = this.d2x(stack[i].value);
             cellId = document.getElementById("stackTableArrow"+i);
@@ -347,7 +353,7 @@ class OutputController{
         for(let i = 0; i < registerNum; i++){
             cellId = document.getElementById("registerTableCell"+String(i));           
             cellId.innerHTML = "0";
-            cellId.style.backgroundColor = "#ffffff";
+            cellId.style.backgroundColor = this.colorWhite;
         }
     }
 
@@ -358,9 +364,9 @@ class OutputController{
         cellIdHi.innerHTML = "0";
         cellIdLo.innerHTML = "0";
         cellIdPc.innerHTML = "0";
-        cellIdHi.backgroundColor = "#ffffff";
-        cellIdLo.backgroundColor = "#ffffff";
-        cellIdPc.backgroundColor = "#ffffff";
+        cellIdHi.backgroundColor = this.colorWhite;
+        cellIdLo.backgroundColor = this.colorWhite;
+        cellIdPc.backgroundColor = this.colorWhite;
     }
 
     reinitializeDataTable(){
@@ -376,7 +382,7 @@ class OutputController{
         for(let i = 0; i < stackSize; i++){
             cellId = document.getElementById("stackTableData"+String(i));           
             cellId.innerHTML = "0";
-            cellId.style.backgroundColor = "#c0c0c0";
+            cellId.style.backgroundColor = this.colorGray;
             cellId = document.getElementById("stackTableArrow" + String(i));
             cellId.innerHTML = "";
         }
@@ -387,7 +393,7 @@ class OutputController{
         for(let i = 0; i < programSize; i++){
             cellId = document.getElementById("programTableData"+String(i));           
             cellId.innerHTML = "";
-            cellId.style.backgroundColor = "#ffffff";
+            cellId.style.backgroundColor = this.colorWhite;
             cellId = document.getElementById("programTableArrow" + String(i));
             cellId.innerHTML = "";
             cellId = document.getElementById("programTableLabel" + String(i));

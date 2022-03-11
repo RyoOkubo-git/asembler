@@ -326,3 +326,38 @@ outp:  addi $sp, $sp, -8
 main: move $t0, $zero
       sub $t0, $t0, 1
       addi $t0, $t0, 1
+
+------------------------------------------------------------
+
+#初期化しないバグを含ませてある。
+      .data
+list: .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+
+      .text
+      .globl main
+
+main: addi $sp, $sp, -4 #スタックに 1 ワードの領域を確保
+      sw $ra, 0($sp) # 戻り先アドレスの退避
+      la $a0, list # 第 1 引 数 = データ領域 list のアドレス
+      li $a1, 10 # 第 2 引数 = 10 データ数
+      jal sum # サブルーチン sum の呼び出し
+      move $a0, $v0 # システムコールの引数 = sum の戻り値 $v0 総和
+      li $v0, 1 # print_integer の指定
+      syscall # 総和の出力
+      lw $ra, 0($sp) # 戻り先アドレスの復元
+      addi $sp, $sp, 4 # スタックに確保した領域の開放
+      jr $ra
+
+sum:  addi $sp, $sp, -4 # スタックに 1 ワードの領域を確保
+      sw $s0, 0($sp) # $s0 の退避
+      #li $t0, 0
+l1:   lw $s0 , 0($a0)
+      add $t0, $t0, $s0
+      addi $a0, $a0, 4
+      addi $a1, $a1, -1
+      bne $a1, $zero, l1
+      move $v0, $t0
+      lw $s0, 0($sp) # $s0 の回復
+      addi $sp, $sp, 4 # スタックに確保した領域の開放
+      jr $ra
+
