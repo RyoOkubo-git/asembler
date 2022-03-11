@@ -2,6 +2,8 @@ const reviewTextarea = document.getElementById('reviewTextarea');
 const loadButton = document.getElementById('loadButton');
 const stepButton = document.getElementById('stepButton');
 const runButton = document.getElementById('runButton');
+const reinitializeButton = document.getElementById('reinitializeButton');
+const reExeButton = document.getElementById('reExeButton');
 const inputButton = document.getElementById("inputButton");
 const inputTextId = document.getElementById("inputTextId");
 const stackTable = document.getElementById("stackTable");
@@ -14,6 +16,8 @@ const processor = new Processor();
 loadButton.addEventListener('click', loadStream);
 runButton.addEventListener('click', runInstruction);
 stepButton.addEventListener('click', stepInstruction);
+reinitializeButton.addEventListener('click', callReinitialize);
+reExeButton.addEventListener("click", callReExecutionState);
 inputButton.addEventListener('click', inputButtonClick);
 stackTable.scrollIntoView(false);
 
@@ -32,4 +36,12 @@ function stepInstruction(){
 function inputButtonClick(){
     processor.inputText(inputTextId.value);
     inputTextId.value = "";
+}
+
+function callReinitialize(){
+    processor.reinitialize();
+}
+
+function callReExecutionState(){
+    processor.reExecutionState();
 }

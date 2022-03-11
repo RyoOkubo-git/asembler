@@ -22,6 +22,7 @@ class Processor{
         "$s0": 16, "$s1": 17, "$s2": 18, "$s3": 19, "$s4": 20, "$s5": 21, "$s6": 22, "$s7": 23,
         "$t8": 24, "$t9": 25, "$k0": 26, "$k1": 27, "$gp": 28, "$sp": 29, "$fp": 30, "$ra": 31,}
         this.syscallState = 0;
+        this.runState = 0;
         this.execState = 0;
         this.outputController = new OutputController();
     }
@@ -43,6 +44,56 @@ class Processor{
         }
     }
 
+    reinitialize(){
+        let i;
+        this.execState = 0;
+        this.syscallState = 0;
+        this.runState = 0;
+        this.pc = 0;
+        this.hi.value = this.lo.value = 0;
+        this.hi.dst = this.hi.src = this.lo.dst = this.lo.src = 0;
+        this.startLabel = "";
+        for(let key in this.labels){
+            delete this.labels[key];
+        }
+        for(i = 0; i < registerNum; i++){
+            this.registers[i].value = 0;
+            this.registers[i].dst = 0;
+            this.registers[i].src = 0;
+        }
+        for(i = 0; i < stackSize; i++){
+            this.stack[i].value = 0;
+            this.stack[i].dst = 0;
+            this.stack[i].src = 0;
+        }
+        for(i = 0; i < dataSize; i++){
+            this.staticData[i].value = 0;
+            this.staticData[i].dst = 0;
+            this.staticData[i].src = 0;
+        }
+        for(i = 0; i < programSize; i++){
+            this.program[i].label = "";
+            this.program[i].inst.opt = "";
+            this.program[i].inst.opd1 = "";
+            this.program[i].inst.opd2 = "";
+            this.program[i].inst.opd3 = "";
+            this.program[i].ln = -1;
+            this.program[i].current = 0;
+        }
+        this.outputController.reinitializeAllTable();
+        this.outputController.printMessage("Reinitialized.");
+    }
+
+    reExecutionState(){
+        this.execState = 1;
+        this.syscallState = 0;
+        this.runState = 0;
+        this.pc = this.labels[this.startLabel];
+        this.registers[this.r2i["$ra"]].value = -1;
+        this.outputController.printMessage("再実行可能です。\n");
+        //this.registers[this.r2i["$sp"]].value = stackStandard;
+    }
+
     executeRun(){
         let programIdx;
         this.runState = 1;
@@ -54,14 +105,28 @@ class Processor{
             this.outputController.printMessage("Input Integer and click button.\n");
             return;
         }
-        while(this.execState == 1 && this.syscallState != 5){
+        while(this.runState == 1 && this.execState == 1 && this.syscallState != 5){
             programIdx = this.pa2i(this.pc);
             this.pc = this.pc + 4;
             this.processInstruction(this.program[programIdx].inst);
         }
         if(this.syscallState == 5){return;}
         this.runState = 0;
-        this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
+        this.resetDstSrc();
+        this.outputController.afterRunAllTable(this.registers, this.stack, this.hi, this.lo, this.pc);
+    }
+
+    resetDstSrc(){
+        let i;
+        this.hi.dst = this.hi.src = this.lo.dst = this.lo.src = 0;
+        for(i = 0; i < registerNum; i++){
+            this.registers[i].dst = 0;
+            this.registers[i].src = 0;
+        }
+        for(i = 0; i < stackSize; i++){
+            this.stack[i].dst = 0;
+            this.stack[i].src = 0;
+        }
     }
 
     executeStep(){
@@ -78,6 +143,7 @@ class Processor{
         this.pc = this.pc + 4;
         this.processInstruction(this.program[programIdx].inst);
         this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
+        this.hi.dst = this.hi.src = this.lo.dst = this.lo.src = 0;
     }
 
     processInstruction(inst){
@@ -464,7 +530,7 @@ class Processor{
     processJr(inst){
         const reg1 = this.r2i[inst.opd1];
         const address = this.registers[reg1].value;
-        if(address < 0){ this.execState = 0; return;/* program terminate */ }
+        if(address < 0){ this.execState = 0; this.runState = 0; return;/* program terminate */ }
         if(address < pcStandard || pcStandard + 4*programSize <= address){throw new Error("invalid access. 0x" + address.toString(16));}
         this.pc = address;
         this.registers[reg1].src = 1;
