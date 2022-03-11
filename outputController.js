@@ -2,13 +2,14 @@ class OutputController{
     constructor(){
         this.displayId = document.getElementById("display");
         this.messageId = document.getElementById("message");
+        this.programPartId = document.getElementById("programPart")
         this.makeDataTable();
         this.makeStackTable();
         this.makeProgramTable();
     }
 
     makeDataTable(){
-        let dataTableId = document.getElementById('dataTable');
+        const dataTableId = document.getElementById('dataTable');
         for(let i=0; i<dataSize; i++){
             let tr = document.createElement('tr');
             let th = document.createElement('th');
@@ -26,7 +27,7 @@ class OutputController{
     }
 
     makeStackTable(){
-        let stackTableId = document.getElementById('stackTable');
+        const stackTableId = document.getElementById('stackTable');
         for(let i=0; i<=stackSize; i++){
             let tr = document.createElement('tr');
             let th = document.createElement('th');
@@ -44,11 +45,13 @@ class OutputController{
             tr.appendChild(th);
             tr.appendChild(td);
             stackTableId.appendChild(tr);
+            document.getElementById("stackTableData" + String(i)).style.backgroundColor = "#c0c0c0"
         }
+        document.getElementById("stackTableData" + String(stackSize)).style.backgroundColor = "#000000";
     }
 
     makeProgramTable(){
-        let programTableId = document.getElementById('programTable');
+        const programTableId = document.getElementById("programTable");
         for(let i = 0; i < programSize; i++){
             let tr = document.createElement('tr');
             let th = document.createElement('th');
@@ -77,6 +80,7 @@ class OutputController{
         this.loadRegisterTable(r);
         this.loadOtherRegisterTable(hi, lo, pc);
         this.loadDataTable(d);
+        this.loadStackTable(r[29].value);
         this.loadProgramTable(p, pc);
     }
 
@@ -111,6 +115,12 @@ class OutputController{
                 cellId.innerHTML = value;
             }
         }
+    }
+
+    loadStackTable(address){
+        const spIdx = stackSize - Math.floor((stackStandard - address) / 4);
+        const cellId = document.getElementById("stackTableArrow" + String(spIdx));
+        cellId.innerHTML = "sp → ";
     }
 
     loadProgramTable(program, pc){
@@ -165,7 +175,7 @@ class OutputController{
                 cellId.innerHTML = this.d2x(registers[i].value);
                 cellId.style.backgroundColor = "#ffc0cb";
             }else if(src == 1){
-                cellId.style.backgroundColor = "#7fffd4";
+                cellId.style.backgroundColor = "#e0ffff";
             }else{
                 cellId.style.backgroundColor = "#ffffff";
             }
@@ -183,7 +193,7 @@ class OutputController{
             cellIdHi.innerHTML = this.d2x(hi.value);
             cellIdHi.style.backgroundColor = "#ffc0cb";
         }else if(hi.src == 1){
-            cellIdHi.style.backgroundColor = "#7fffd4";
+            cellIdHi.style.backgroundColor = "#e0ffff";
         }else{
             cellIdHi.style.backgroundColor = "#ffffff";
         }
@@ -191,7 +201,7 @@ class OutputController{
             cellIdLo.innerHTML = this.d2x(lo.value);
             cellIdLo.style.backgroundColor = "#ffc0cb";
         }else if(lo.src == 1){
-            cellIdLo.style.backgroundColor = "#7fffd4";
+            cellIdLo.style.backgroundColor = "#e0ffff";
         }else{
             cellIdLo.style.backgroundColor = "#ffffff";
         }
@@ -217,7 +227,7 @@ class OutputController{
                 cellId.innerHTML = this.d2x(stack[i].value);
                 cellId.style.backgroundColor = "#ffc0cb";
             }else if(src == 1){
-                cellId.style.backgroundColor = "#7fffd4";
+                cellId.style.backgroundColor = "#e0ffff";
             }
             stack[i].dst = 0;
             stack[i].src = 0;
@@ -236,16 +246,6 @@ class OutputController{
         }
     }
 
-    d2x(val){
-        if((stackStandard - 4*stackSize <= val && val <= stackStandard) ||
-            (dataStandard <= val && val < dataStandard + 4*dataSize) ||
-            (pcStandard <= val && val < pcStandard + 4*programSize)){
-                return "0x" + val.toString(16)
-        }else{
-            return String(val);
-        }
-    }
-
     highlightProgramTable(program, pc){
         let cellId;
         for(let i = 0; i < programSize; i++){
@@ -253,15 +253,27 @@ class OutputController{
             if(program[i].current == 1){
                 cellId.style.backgroundColor = "#ffd700";
                 program[i].current = 0;
+                this.programPartId.scrollTo(0, cellId.getBoundingClientRect().top + this.programPartId.scrollTop - document.documentElement.clientHeight/2);
             }else{
                 cellId.style.backgroundColor = "#ffffff";
             }
             cellId = document.getElementById("programTableArrow" + String(i));
             if(pc == pcStandard + 4*i){
                 cellId.innerHTML = "pc → ";
+                
             }else{
                 cellId.innerHTML = ""
             }
+        }
+    }
+
+    d2x(val){
+        if((stackStandard - 4*stackSize <= val && val <= stackStandard) ||
+            (dataStandard <= val && val < dataStandard + 4*dataSize) ||
+            (pcStandard <= val && val < pcStandard + 4*programSize)){
+                return "0x" + val.toString(16)
+        }else{
+            return String(val);
         }
     }
 

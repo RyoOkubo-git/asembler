@@ -336,9 +336,20 @@ class Processor{
     processLw(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg3 = this.r2i[inst.opd3];
-        const address = this.sa2i(this.registers[reg3].value + parseInt(inst.opd2, 10));
-        this.registers[reg1].value = this.stack[address].value;
-        this.stack[address].src = 1;
+        let idx;
+        const address = this.registers[reg3].value + parseInt(inst.opd2, 10);
+        if(this.addressInStack(address)){
+            idx = this.sa2i(address);
+            this.registers[reg1].value = this.stack[idx].value;
+            this.stack[idx].src = 1;
+        }else if(this.addressInData(address)){
+            idx = this.da2i(address);
+            this.registers[reg1].value = this.staticData[idx].value;
+        }else if(this.addressInProgram(address)){
+            throw new Error(`Sorry. You can't access to program`);
+        }else{
+            throw new Error(`Address 0x${address.toString(16)} is out of range.`);
+        }
         this.registers[reg1].dst = 1;
         this.registers[reg3].src = 1;
     }
@@ -504,9 +515,11 @@ class Processor{
         }else if(!regexp.test(text)){
             this.outputController.printMessage("Only a number will be accepted.\n");
         }else{
-            this.registers[this.r2i["$v0"]].value = parseInt(text, 10);
+            const num = parseInt(text, 10);
+            this.registers[this.r2i["$v0"]].value = num;
             this.syscallState = 0;
-            this.outputController.printMessage("Accept.\n");
+            this.outputController.printMessage("Accepted.\n");
+            this.outputController.printDisplay(text+"\n");
             if(this.runState == 1){this.executeRun();}
         }
     }
@@ -521,5 +534,17 @@ class Processor{
 
     sa2i(address){  // stack address to index
         return stackSize - Math.floor((stackStandard - address) / 4);
+    }
+
+    addressInData(address){
+        return (dataStandard <= address && address < dataStandard + 4*dataSize);
+    }
+
+    addressInStack(address){
+        return (stackStandard - 4*stackSize <= address && address <= stackStandard);
+    }
+
+    addressInProgram(address){
+        return (pcStandard <= address && address < pcStandard + 4*programSize);
     }
 }
