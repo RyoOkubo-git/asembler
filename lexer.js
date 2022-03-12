@@ -67,7 +67,7 @@ class Lexer{
 
         switch(tid){
             case "li" : case "move" : case "syscall" :
-            case "add" : case "addi" : case "sub" :
+            case "add" : case "addi" : case "sub" : case "neg" :
             case "mult" : case "div" : case "mfhi" : case "mflo" :
             case "and" : case "andi" : case "or" : case "ori" :
             case "not" : case "xor" : case "xori":
@@ -76,6 +76,9 @@ class Lexer{
             case "slt" : case "slti" : case "seq" : case "sge":
             case "sgt" : case "sle" : case "sne":
             case "beq" : case "bne" : case "b" :
+            case "bge" : case "bgt" : case "ble" : case "blt" :
+            case "bgez" : case "bgtz" : case "blez" : case "bltz" :
+            case "beqz" : case "bnez" :
             case "j" : case "jr" : case "jal" :
                 this.tokens.push(new Token(tid, "opt", this.ln)); break;
             default:

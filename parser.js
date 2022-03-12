@@ -126,7 +126,7 @@ class Parser{
     }
 
     checkStaticDataIndex(dataIdx){
-        if(dataIdx < 0 || 49 < dataIdx){throw new Error(`Data segment overflow.`);}
+        if(dataIdx < 0 || dataSize <= dataIdx){throw new Error(`Data segment overflow.`);}
     }
 
     parseText(){
@@ -169,6 +169,7 @@ class Parser{
             case "add" : inst = this.parseAdd(); break;
             case "addi" : inst = this.parseAddi(); break;
             case "sub" : inst = this.parseSub(); break;
+            case "neg" : inst = this.parseNeg(); break;
             case "mult" : inst = this.parseMult(); break;
             case "div" : inst = this.parseDiv(); break;
             case "mfhi" : inst = this.parseMfhi(); break;
@@ -196,6 +197,16 @@ class Parser{
             case "beq" : inst = this.parseBeq(); break;
             case "bne" : inst = this.parseBne(); break;
             case "b" : inst = this.parseB(); break;
+            case "bge" : inst = this.parseBge(); break;
+            case "bgt" : inst = this.parseBgt(); break;
+            case "ble" : inst = this.parseBle(); break;
+            case "blt" : inst = this.parseBlt(); break;
+            case "bgez" : inst = this.parseBgez(); break;
+            case "bgtz" : inst = this.parseBgtz(); break;
+            case "blez" : inst = this.parseBlez(); break;
+            case "bltz" : inst = this.parseBltz(); break;
+            case "beqz" : inst = this.parseBeqz(); break;
+            case "bnez" : inst = this.parseBnez(); break;
             case "j" : inst = this.parseJ(); break;
             case "jr" : inst = this.parseJr(); break;
             case "jal" : inst = this.parseJal(); break;
@@ -277,6 +288,18 @@ class Parser{
         }
         const inst = new Instruction("sub", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
+        return inst;
+    }
+
+    parseNeg(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register"){
+                throw new Error(`wrong argument. "neg"`);
+        }
+        const inst = new Instruction("neg", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
         return inst;
     }
 
@@ -637,6 +660,134 @@ class Parser{
         }
         const inst = new Instruction("b", this.tokens[0].value, "", "");
         this.remToken(1);
+        return inst;
+    }
+
+    parseBge(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "label"){
+                throw new Error(`wrong argument. "bge"`);
+        }
+        const inst = new Instruction("bge", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseBgt(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "label"){
+                throw new Error(`wrong argument. "bgt"`);
+        }
+        const inst = new Instruction("bgt", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseBle(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "label"){
+                throw new Error(`wrong argument. "ble"`);
+        }
+        const inst = new Instruction("ble", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseBlt(){
+        if(this.tokens.length <= 4 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "register" ||
+            this.tokens[3].kind != "comma" ||
+            this.tokens[4].kind != "label"){
+                throw new Error(`wrong argument. "blt"`);
+        }
+        const inst = new Instruction("blt", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
+        this.remToken(5);
+        return inst;
+    }
+
+    parseBgez(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "label"){
+                throw new Error(`wrong argument. "bgez"`);
+        }
+        const inst = new Instruction("bgez", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
+        return inst;
+    }
+
+    parseBgtz(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "label"){
+                throw new Error(`wrong argument. "bgtz"`);
+        }
+        const inst = new Instruction("bgtz", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
+        return inst;
+    }
+
+    parseBlez(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "label"){
+                throw new Error(`wrong argument. "blez"`);
+        }
+        const inst = new Instruction("blez", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
+        return inst;
+    }
+
+    parseBltz(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "label"){
+                throw new Error(`wrong argument. "bltz"`);
+        }
+        const inst = new Instruction("bltz", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
+        return inst;
+    }
+
+    parseBeqz(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "label"){
+                throw new Error(`wrong argument. "beqz"`);
+        }
+        const inst = new Instruction("beqz", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
+        return inst;
+    }
+
+    parseBnez(){
+        if(this.tokens.length <= 2 ||
+            this.tokens[0].kind != "register" ||
+            this.tokens[1].kind != "comma" ||
+            this.tokens[2].kind != "label"){
+                throw new Error(`wrong argument. "bnez"`);
+        }
+        const inst = new Instruction("bnez", this.tokens[0].value, this.tokens[2].value, "");
+        this.remToken(3);
         return inst;
     }
 

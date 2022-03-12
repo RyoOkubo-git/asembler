@@ -41,6 +41,7 @@ class Processor{
             this.outputController.printMessage("Load.\n");
         } catch (error) {
             this.outputController.printMessage(error.message);
+            console.error(error);
         }
     }
 
@@ -114,6 +115,7 @@ class Processor{
         this.runState = 0;
         this.resetDstSrc();
         this.outputController.afterRunAllTable(this.registers, this.stack, this.hi, this.lo, this.pc);
+        this.outputController.printMessage("実行が完了しました。");
     }
 
     resetDstSrc(){
@@ -153,6 +155,7 @@ class Processor{
             case "add" : this.processAdd(inst); break;
             case "addi" : this.processAddi(inst); break;
             case "sub" : this.processSub(inst); break;
+            case "neg" : this.processNeg(inst); break;
             case "mult" : this.processMult(inst); break;
             case "div" : this.processDiv(inst); break;
             case "mfhi" : this.processMfhi(inst); break;
@@ -180,6 +183,16 @@ class Processor{
             case "beq" : this.processBeq(inst); break;
             case "bne" : this.processBne(inst); break;
             case "b" : this.processB(inst); break;
+            case "bge" : this.processBge(inst); break;
+            case "bgt" : this.processBgt(inst); break;
+            case "ble" : this.processBle(inst); break;
+            case "blt" : this.processBlt(inst); break;
+            case "bgez" : this.processBgez(inst); break;
+            case "bgtz" : this.processBgtz(inst); break;
+            case "blez" : this.processBlez(inst); break;
+            case "bltz" : this.processBltz(inst); break;
+            case "beqz" : this.processBeqz(inst); break;
+            case "bnez" : this.processBnez(inst); break;
             case "j" : this.processJ(inst); break;
             case "jr" : this.processJr(inst); break;
             case "jal" : this.processJal(inst); break;
@@ -229,6 +242,14 @@ class Processor{
         this.registers[reg1].dst = 1;
         this.registers[reg2].src = 1;
         this.registers[reg3].src = 1;
+    }
+
+    processNeg(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        this.registers[reg1].value = -this.registers[reg2].value;
+        this.registers[reg1].dst = 1;
+        this.registers[reg2].src = 1;
     }
 
     processMult(inst){
@@ -391,10 +412,12 @@ class Processor{
     processSw(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg3 = this.r2i[inst.opd3];
-        const address = this.sa2i(this.registers[reg3].value + parseInt(inst.opd2, 10));
-        this.stack[address].value = this.registers[reg1].value;
-        this.stack[address].kind = "digit";
-        this.stack[address].dst = 1;
+        const address = this.registers[reg3].value + parseInt(inst.opd2, 10);
+        if(!this.addressInStack(address)){throw new Error("エラー：スタック範囲外にアクセスしました。（sw）");}
+        const idx = this.sa2i(address);
+        this.stack[idx].value = this.registers[reg1].value;
+        this.stack[idx].kind = "digit";
+        this.stack[idx].dst = 1;
         this.registers[reg1].src = 1;
         this.registers[reg3].src = 1;
     }
@@ -522,6 +545,104 @@ class Processor{
         this.pc = this.labels[inst.opd1];
     }
 
+    processBge(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(this.registers[reg1].value >= this.registers[reg2].value){
+            this.pc = this.labels[inst.opd3];
+        }
+        this.registers[reg1].src = 1;
+        this.registers[reg2].src = 1;
+    }
+
+    processBgt(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(this.registers[reg1].value > this.registers[reg2].value){
+            this.pc = this.labels[inst.opd3];
+        }
+        this.registers[reg1].src = 1;
+        this.registers[reg2].src = 1;
+    }
+
+    processBle(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(this.registers[reg1].value <= this.registers[reg2].value){
+            this.pc = this.labels[inst.opd3];
+        }
+        this.registers[reg1].src = 1;
+        this.registers[reg2].src = 1;
+    }
+
+    processBlt(inst){
+        const reg1 = this.r2i[inst.opd1];
+        const reg2 = this.r2i[inst.opd2];
+        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(this.registers[reg1].value < this.registers[reg2].value){
+            this.pc = this.labels[inst.opd3];
+        }
+        this.registers[reg1].src = 1;
+        this.registers[reg2].src = 1;
+    }
+
+    processBgez(inst){
+        const reg1 = this.r2i[inst.opd1];
+        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(this.registers[reg1].value >= 0){
+            this.pc = this.labels[inst.opd2];
+        }
+        this.registers[reg1].src = 1;
+    }
+
+    processBgtz(inst){
+        const reg1 = this.r2i[inst.opd1];
+        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(this.registers[reg1].value > 0){
+            this.pc = this.labels[inst.opd2];
+        }
+        this.registers[reg1].src = 1;
+    }
+
+    processBlez(inst){
+        const reg1 = this.r2i[inst.opd1];
+        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(this.registers[reg1].value <= 0){
+            this.pc = this.labels[inst.opd2];
+        }
+        this.registers[reg1].src = 1;
+    }
+
+    processBltz(inst){
+        const reg1 = this.r2i[inst.opd1];
+        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(this.registers[reg1].value < 0){
+            this.pc = this.labels[inst.opd2];
+        }
+        this.registers[reg1].src = 1;
+    }
+
+    processBeqz(inst){
+        const reg1 = this.r2i[inst.opd1];
+        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(this.registers[reg1].value == 0){
+            this.pc = this.labels[inst.opd2];
+        }
+        this.registers[reg1].src = 1;
+    }
+
+    processBnez(inst){
+        const reg1 = this.r2i[inst.opd1];
+        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(this.registers[reg1].value != 0){
+            this.pc = this.labels[inst.opd2];
+        }
+        this.registers[reg1].src = 1;
+    }
+
     processJ(inst){
         if(!(inst.opd1 in this.labels)){throw new Error(`No such label. "${inst.opd1}"`);}
         this.pc = this.labels[inst.opd1];
@@ -607,7 +728,7 @@ class Processor{
     }
 
     addressInStack(address){
-        return (stackStandard - 4*stackSize <= address && address <= stackStandard);
+        return (stackStandard - 4*stackSize <= address && address < stackStandard);
     }
 
     addressInProgram(address){

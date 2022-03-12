@@ -90,6 +90,7 @@ main: li $s0, 5
       add $s2, $s0, $s1
       addi $s3, $s0, 9
       sub  $s4, $s0, $s1
+      neg  $s5, $s0
 
 ----------------------------------------------------------------------------------
 
@@ -200,6 +201,63 @@ main: move $t0, $zero
       li $t0, -1
 loop: addi $t0, $t0, 1
       beq $t0, $zero, loop
+      addi $t0, $t0, 3
+      li $v0, 1
+      move $a0, $t0
+
+----------------------------------------------------------------------------------
+
+      .text # ここから先はテキストセグメント
+      .globl main # main をグローバルラベルとする
+
+main: move $t0, $zero
+      li $t0, 10
+loop: addi $t0, $t0, -1
+      bgez $t0, loop
+      addi $t0, $t0, 3
+      li $v0, 1
+      move $a0, $t0
+
+----------------------------------------------------------------------------------
+
+      .text # ここから先はテキストセグメント
+      .globl main # main をグローバルラベルとする
+
+main: move $t0, $zero
+      li $t0, -5
+loop: addi $t0, $t0, 1
+      blez $t0, loop
+      addi $t0, $t0, 3
+      li $v0, 1
+      move $a0, $t0
+
+---------------------------------------------------------------------------------
+
+      .text # ここから先はテキストセグメント
+      .globl main # main をグローバルラベルとする
+
+main: move $t0, $zero
+      li $t0, -1
+loop: addi $t0, $t0, 1
+      beqz $t0, loop
+      addi $t0, $t0, -1
+      beqz $t0, loop
+      addi $t0, $t0, 3
+      li $v0, 1
+      move $a0, $t0
+
+---------------------------------------------------------------------------------
+
+      .text # ここから先はテキストセグメント
+      .globl main # main をグローバルラベルとする
+
+main: move $t0, $zero
+      li $t0, -5
+loop: addi $t0, $t0, 1
+      bnez $t0, loop
+      addi $t0, $t0, 5
+lop:  addi $t0, $t0, -1
+      bnez $t0, lop
       addi $t0, $t0, 3
       li $v0, 1
       move $a0, $t0
