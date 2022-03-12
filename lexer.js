@@ -18,14 +18,14 @@ class Lexer{
                 case /#/.test(c) : this.remComment(); break;
                 case /[a-zA-Z]/.test(c) : this.tokenId(); break;
                 case /\$/.test(c) : this.tokenRegister(); break;
-                case /[0-9\-]/.test(c) : this.tokenDigit(); break;
+                case /[0-9\-\+]/.test(c) : this.tokenDigit(); break;
                 case /\./.test(c) : this.tokenDot(); break;
                 case /:/.test(c) : this.tokenColon(); break;
                 case /"/.test(c) : this.tokenDQuo(); break;
                 case /,/.test(c) : this.tokenComma(); break;
                 case /[()]/.test(c) : this.tokenBrackets(); break;
                 default:
-                    throw new Error('lex error.');
+                    throw new Error(`${this.ln}行目：誤った文字が存在します。`);
             }
         }
     }
@@ -90,8 +90,8 @@ class Lexer{
         let idx = this.stream.search(/[ \n(,]/);
         if(idx < 0) idx = this.stream.length;
         const dig = this.stream.substring(0,idx);
-        const regexp = RegExp('[^0-9\-]', 'g');
-        if(regexp.test(dig)){throw new Error('digit? error.');}
+        const regexp = RegExp('^[\-\+]?[0-9]+$', 'g');
+        if(!(regexp.test(dig))){throw new Error(`${this.ln}行目：数字ではない字句が含まれています。`);}
         this.stream = this.stream.slice(idx);
         this.tokens.push(new Token(dig, "digit", this.ln));
     }
@@ -109,7 +109,7 @@ class Lexer{
             case ".text" : this.tokens.push(new Token(seg, "text", this.ln)); break;
             case ".globl" : this.tokens.push(new Token(seg, "globl", this.ln)); break;
             default:
-                throw new Error('segment error.');
+                throw new Error(`${this.ln}行目：未知の文字列が存在します。`);
         }
     }
 
@@ -129,7 +129,7 @@ class Lexer{
             case "$t8" : case "$t9" : case "$k0" : case "$k1" :
             case "$gp" : case "$sp" : case "$fp" : case "$ra" : break;
             default:
-                throw new Error('invalid register');
+                throw new Error(`${this.ln}行目：誤ったレジスタが含まれています。`);
         }
         this.tokens.push(new Token(reg, "register", this.ln));
     }
@@ -147,7 +147,7 @@ class Lexer{
     tokenDQuo(){
         this.nextWord();
         let idx = this.stream.search(/"/);
-        if(idx < 0) throw new Error('can\'t find quotation');
+        if(idx < 0) throw new Error(`${this.ln}行目：ダブルクオテーションが閉じられていません。`);
         const adata = this.stream.substring(0,idx);
         this.stream = this.stream.slice(idx+1);
         this.tokens.push(new Token("\"", "quotation", this.ln));

@@ -24,6 +24,7 @@ class Processor{
         this.syscallState = 0;
         this.runState = 0;
         this.execState = 0;
+        this.loadState = 0;
         this.outputController = new OutputController();
     }
 
@@ -37,10 +38,11 @@ class Processor{
             this.syscallState = 0;
             this.execState = 1;
             this.runState = 0;
+            this.loadState = 1;
             this.outputController.loadAllTable(this.registers, this.staticData, this.program, this.hi, this.lo, this.pc);
-            this.outputController.printMessage("Load.\n");
+            this.outputController.printMessage("ロードが完了しました。\n");
         } catch (error) {
-            this.outputController.printMessage(error.message);
+            this.outputController.printMessage("エラー\n" + error.message);
             console.error(error);
         }
     }
@@ -50,6 +52,7 @@ class Processor{
         this.execState = 0;
         this.syscallState = 0;
         this.runState = 0;
+        this.loadState = 0;
         this.pc = 0;
         this.hi.value = this.lo.value = 0;
         this.hi.dst = this.hi.src = this.lo.dst = this.lo.src = 0;
@@ -82,10 +85,11 @@ class Processor{
             this.program[i].current = 0;
         }
         this.outputController.reinitializeAllTable();
-        this.outputController.printMessage("Reinitialized.");
+        this.outputController.printMessage("reinitializeが完了しました。");
     }
 
     reExecutionState(){
+        if(this.loadState == 0){return;}
         this.execState = 1;
         this.syscallState = 0;
         this.runState = 0;
@@ -99,11 +103,11 @@ class Processor{
             let programIdx;
             this.runState = 1;
             if(this.execState == 0){
-                this.outputController.printMessage("Program is not executable state.\n");
+                this.outputController.printMessage("プログラムは実行可能状態ではありません。\n");
                 return;
             }
             if(this.syscallState == 5){
-                this.outputController.printMessage("Input Integer and click button.\n");
+                this.outputController.printMessage("整数を入力してinputボタンを押してください。\n");
                 return;
             }
             while(this.runState == 1 && this.execState == 1 && this.syscallState != 5){
@@ -120,7 +124,7 @@ class Processor{
             this.runState = 0;
             this.execState = 0;
             this.syscallState = 0;
-            this.outputController.printMessage(error.message + "\nプログラムを強制終了します。");
+            this.outputController.printMessage("エラー\n" + error.message + "\nプログラムを強制終了します。");
             console.error(error);
         }
     }
@@ -141,21 +145,22 @@ class Processor{
     executeStep(){
         try {
             if(this.execState == 0){
-                this.outputController.printMessage("Program is not executable state.\n");
+                this.outputController.printMessage("プログラムは実行可能状態ではありません。\n");
                 return;
             }
             if(this.syscallState == 5){
-                this.outputController.printMessage("Input Integer and click button.\n");
+                this.outputController.printMessage("整数を入力してinputボタンを押してください。\n");
                 return;
             }
             const programIdx = this.checkProgramErrorAndReturnIndex(this.pc);
             this.program[programIdx].current = 1;
             this.pc = this.pc + 4;
+            this.outputController.printMessage(`"${this.program[programIdx].inst.opt}"を実行しました。`);
             this.processInstruction(this.program[programIdx].inst);
             this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
             this.hi.dst = this.hi.src = this.lo.dst = this.lo.src = 0;
         } catch (error) {
-            this.outputController.printMessage(error.message);
+            this.outputController.printMessage("エラー\n" + error.message);
             console.error(error);
         }
     }
@@ -218,7 +223,7 @@ class Processor{
             case "jal" : this.processJal(inst); break;
             case "syscall" : this.processSyscall(); break;
             default:
-                throw new Error(`No such instruction. "${inst.opt}"`);
+                throw new Error(`"${inst.opt}"という命令は存在しません。`);
         }
     }
 
@@ -433,7 +438,7 @@ class Processor{
         const reg1 = this.r2i[inst.opd1];
         const reg3 = this.r2i[inst.opd3];
         const address = this.registers[reg3].value + parseInt(inst.opd2, 10);
-        if(!this.addressInStack(address)){throw new Error("エラー：スタック範囲外にアクセスしました。（sw）");}
+        if(!this.addressInStack(address)){throw new Error("swでスタック範囲外にアクセスしました。");}
         const idx = this.sa2i(address);
         this.stack[idx].value = this.registers[reg1].value;
         this.stack[idx].kind = "digit";
@@ -455,9 +460,9 @@ class Processor{
             idx = this.da2i(address);
             this.registers[reg1].value = this.staticData[idx].value;
         }else if(this.addressInProgram(address)){
-            throw new Error(`Sorry. You can't access to program`);
+            throw new Error(`ごめんなさい。プログラムへのアクセスは禁止しています。`);
         }else{
-            throw new Error(`Address 0x${address.toString(16)} is out of range.`);
+            throw new Error(`0x${address.toString(16)}にはアクセスできません。`);
         }
         this.registers[reg1].dst = 1;
         this.registers[reg3].src = 1;
@@ -465,7 +470,7 @@ class Processor{
 
     processLa(inst){
         const reg1 = this.r2i[inst.opd1];
-        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(!(inst.opd2 in this.labels)){throw new Error(`"${inst.opd2}"というラベルは存在しません。`);}
         this.registers[reg1].value = this.labels[inst.opd2];
         this.registers[reg1].dst = 1;
     }
@@ -541,7 +546,7 @@ class Processor{
     processBeq(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg2 = this.r2i[inst.opd2];
-        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(!(inst.opd3 in this.labels)){throw new Error(`"${inst.opd3}"というラベルは存在しません。`);}
         if(this.registers[reg1].value == this.registers[reg2].value){
             this.pc = this.labels[inst.opd3];
         }
@@ -552,7 +557,7 @@ class Processor{
     processBne(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg2 = this.r2i[inst.opd2];
-        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(!(inst.opd3 in this.labels)){throw new Error(`"${inst.opd3}"というラベルは存在しません。`);}
         if(this.registers[reg1].value != this.registers[reg2].value){
             this.pc = this.labels[inst.opd3];
         }
@@ -561,14 +566,14 @@ class Processor{
     }
     
     processB(inst){
-        if(!(inst.opd1 in this.labels)){throw new Error(`No such label. "${inst.opd1}"`);}
+        if(!(inst.opd1 in this.labels)){throw new Error(`"${inst.opd1}"というラベルは存在しません。`);}
         this.pc = this.labels[inst.opd1];
     }
 
     processBge(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg2 = this.r2i[inst.opd2];
-        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(!(inst.opd3 in this.labels)){throw new Error(`"${inst.opd3}"というラベルは存在しません。`);}
         if(this.registers[reg1].value >= this.registers[reg2].value){
             this.pc = this.labels[inst.opd3];
         }
@@ -579,7 +584,7 @@ class Processor{
     processBgt(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg2 = this.r2i[inst.opd2];
-        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(!(inst.opd3 in this.labels)){throw new Error(`"${inst.opd3}"というラベルは存在しません。`);}
         if(this.registers[reg1].value > this.registers[reg2].value){
             this.pc = this.labels[inst.opd3];
         }
@@ -590,7 +595,7 @@ class Processor{
     processBle(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg2 = this.r2i[inst.opd2];
-        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(!(inst.opd3 in this.labels)){throw new Error(`"${inst.opd3}"というラベルは存在しません。`);}
         if(this.registers[reg1].value <= this.registers[reg2].value){
             this.pc = this.labels[inst.opd3];
         }
@@ -601,7 +606,7 @@ class Processor{
     processBlt(inst){
         const reg1 = this.r2i[inst.opd1];
         const reg2 = this.r2i[inst.opd2];
-        if(!(inst.opd3 in this.labels)){throw new Error(`No such label. "${inst.opd3}"`);}
+        if(!(inst.opd3 in this.labels)){throw new Error(`"${inst.opd3}"というラベルは存在しません。`);}
         if(this.registers[reg1].value < this.registers[reg2].value){
             this.pc = this.labels[inst.opd3];
         }
@@ -611,7 +616,7 @@ class Processor{
 
     processBgez(inst){
         const reg1 = this.r2i[inst.opd1];
-        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(!(inst.opd2 in this.labels)){throw new Error(`"${inst.opd2}"というラベルは存在しません。`);}
         if(this.registers[reg1].value >= 0){
             this.pc = this.labels[inst.opd2];
         }
@@ -620,7 +625,7 @@ class Processor{
 
     processBgtz(inst){
         const reg1 = this.r2i[inst.opd1];
-        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(!(inst.opd2 in this.labels)){throw new Error(`"${inst.opd2}"というラベルは存在しません。`);}
         if(this.registers[reg1].value > 0){
             this.pc = this.labels[inst.opd2];
         }
@@ -629,7 +634,7 @@ class Processor{
 
     processBlez(inst){
         const reg1 = this.r2i[inst.opd1];
-        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(!(inst.opd2 in this.labels)){throw new Error(`"${inst.opd2}"というラベルは存在しません。`);}
         if(this.registers[reg1].value <= 0){
             this.pc = this.labels[inst.opd2];
         }
@@ -638,7 +643,7 @@ class Processor{
 
     processBltz(inst){
         const reg1 = this.r2i[inst.opd1];
-        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(!(inst.opd2 in this.labels)){throw new Error(`"${inst.opd2}"というラベルは存在しません。`);}
         if(this.registers[reg1].value < 0){
             this.pc = this.labels[inst.opd2];
         }
@@ -647,7 +652,7 @@ class Processor{
 
     processBeqz(inst){
         const reg1 = this.r2i[inst.opd1];
-        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(!(inst.opd2 in this.labels)){throw new Error(`"${inst.opd2}"というラベルは存在しません。`);}
         if(this.registers[reg1].value == 0){
             this.pc = this.labels[inst.opd2];
         }
@@ -656,7 +661,7 @@ class Processor{
 
     processBnez(inst){
         const reg1 = this.r2i[inst.opd1];
-        if(!(inst.opd2 in this.labels)){throw new Error(`No such label. "${inst.opd2}"`);}
+        if(!(inst.opd2 in this.labels)){throw new Error(`"${inst.opd2}"というラベルは存在しません。`);}
         if(this.registers[reg1].value != 0){
             this.pc = this.labels[inst.opd2];
         }
@@ -664,21 +669,27 @@ class Processor{
     }
 
     processJ(inst){
-        if(!(inst.opd1 in this.labels)){throw new Error(`No such label. "${inst.opd1}"`);}
+        if(!(inst.opd1 in this.labels)){throw new Error(`"${inst.opd1}"というラベルは存在しません。`);}
         this.pc = this.labels[inst.opd1];
     }
 
     processJr(inst){
         const reg1 = this.r2i[inst.opd1];
         const address = this.registers[reg1].value;
-        if(address < 0){ this.execState = 0; this.runState = 0; return;/* program terminate */ }
-        if(address < pcStandard || pcStandard + 4*programSize <= address){throw new Error("invalid access. 0x" + address.toString(16));}
+        if(address < 0){
+            this.execState = 0;
+            this.runState = 0;
+            this.outputController.printMessage("プログラムは正常に終了しました。");
+            return;
+            /* program terminate */
+        }
+        if(address < pcStandard || pcStandard + 4*programSize <= address){throw new Error(`0x${address.toString(16)}の命令は実行できません。`);}
         this.pc = address;
         this.registers[reg1].src = 1;
     }
 
     processJal(inst){
-        if(!(inst.opd1 in this.labels)){throw new Error(`No such label. "${inst.opd1}"`);}
+        if(!(inst.opd1 in this.labels)){throw new Error(`"${inst.opd1}"というラベルは存在しません。`);}
         this.registers[this.r2i["$ra"]].value = this.pc;
         this.registers[this.r2i["$ra"]].dst = 1;
         this.pc = this.labels[inst.opd1];
@@ -689,7 +700,7 @@ class Processor{
         switch(this.syscallState){
             case 1 : this.outputController.printDisplay(this.outputInt()); this.syscallState = 0; break;
             case 4 : this.outputController.printDisplay(this.makeString()); this.syscallState = 0; break;
-            case 5 : this.outputController.printMessage("Input integer and click button.\n"); break;
+            case 5 : this.outputController.printMessage("整数を入力してinputボタンを押してください。\n"); break;
             default:
                 throw new Error(`Sorry. This program can't use syscall number "${this.syscallState}".`);
         }
@@ -697,12 +708,12 @@ class Processor{
 
     makeString(){
         let address = this.registers[this.r2i["$a0"]].value;
-        if(address < dataStandard || dataStandard + 4*dataSize < address){throw new Error(`out of data segment`)}
+        if(address < dataStandard || dataStandard + 4*dataSize < address){throw new Error(`データ領域を超えました。`)}
         let str = "";
         let dataIdx = this.da2i(address);
         let c = this.staticData[dataIdx];
         while(c.value != "\0"){
-            if(c.kind != "asciidata"){throw new Error(`This is not character`)}
+            if(c.kind != "asciidata"){throw new Error(`文字ではないデータが含まれています。`)}
             str = str + c.value;
             address = address + 4;
             dataIdx = this.da2i(address);
@@ -716,16 +727,16 @@ class Processor{
     }
 
     inputText(text){
-        const regexp = RegExp('^[+-]?[0-9]+', 'g');
+        const regexp = RegExp('^[+-]?[0-9]+$', 'g');
         if(this.syscallState != 5){
-            this.outputController.printMessage("Now is not input phase.\n");
+            this.outputController.printMessage("現在は入力を受け付けていません。\n");
         }else if(!regexp.test(text)){
-            this.outputController.printMessage("Only a number will be accepted.\n");
+            this.outputController.printMessage("整数のみ受け付けています。\n");
         }else{
             const num = parseInt(text, 10);
             this.registers[this.r2i["$v0"]].value = num;
             this.syscallState = 0;
-            this.outputController.printMessage("Accepted.\n");
+            this.outputController.printMessage("入力を受け付けました。\n");
             this.outputController.printDisplay(text+"\n");
             if(this.runState == 1){this.executeRun();}
         }

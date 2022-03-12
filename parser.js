@@ -3,7 +3,7 @@ class Parser{
         this.lex = new Lexer();
         this.tokens;
         this.labels = {};
-        
+        this.ln = 0;
         this.staticData = new Array();
         for(let i = 0; i < dataSize; i++){
             this.staticData.push(new StackData(0,"digit"));
@@ -20,7 +20,7 @@ class Parser{
     parse(stream){
         this.lex.lexer(stream);
         this.tokens = this.lex.tokens;
-        //this.pc = 0;
+        this.ln = 1;
         this.pc = pcStandard;
         this.sdp = dataStandard;
         while(this.tokens.length > 0){
@@ -29,14 +29,15 @@ class Parser{
                 case "data" : this.parseData(); break;
                 case "text" : this.parseText(); break;
                 default:
-                    throw new Error(`Parse Error, line: ${tkn.ln}`)
+                    throw new Error(`.dataか.textが見つかりません。`)
             }
         }
         if(!(this.startLabel in this.labels)){throw new Error(`.globlで指定されているラベル"${this.startLabel}"が存在しないようです。`)}
     }
 
     remToken(n){
-        if(this.tokens.length < n){throw new Error(`invalid number`);}
+        if(this.tokens.length < n){throw new Error(`開発側のエラーです。`);}
+        this.ln = this.tokens[n-1].ln + 1;
         while(n>0){
             this.tokens.shift();
             n--;
@@ -55,16 +56,17 @@ class Parser{
                 this.tokens[2].kind == "asciiz"){
                 this.parseAsciiData();
             }else{
-                throw new Error(`Parse Error, line: ${tkn.ln}`);
+                throw new Error(`${this.tokens[0].ln}行目：.asciizか.wordを指定してください。`);
             }
         }
     }
 
     parseWordData(){
+        this.checkLabels(this.tokens[0].value);
         this.labels[this.tokens[0].value] = this.sdp;
         this.remToken(3);
         let tkn = this.tokens[0];
-        if(tkn.kind != "digit"){throw new Error(`Parse Error, line: ${tkn.ln}`);}
+        if(tkn.kind != "digit"){throw new Error(`${tkn.ln}行目：数字でない字句が含まれています。`);}
         let dataIdx = Math.floor((this.sdp-dataStandard)/4);
         this.checkStaticDataIndex(dataIdx);
         this.staticData[dataIdx].value = parseInt(tkn.value, 10);
@@ -73,7 +75,7 @@ class Parser{
         this.remToken(1);
         while(this.tokens.length > 0 && this.tokens[0].kind == "comma"){
             if(this.tokens.length < 2 || this.tokens[1].kind != "digit"){
-                throw new Error(`Parse Error, line: ${tkn.ln}`);
+                throw new Error(`${tkn.ln}行目：構文エラーです。`);
             }
             tkn = this.tokens[1];
             dataIdx = Math.floor((this.sdp-dataStandard)/4);
@@ -86,13 +88,14 @@ class Parser{
     }
 
     parseAsciiData(){
+        this.checkLabels(this.tokens[0].value);
         this.labels[this.tokens[0].value] = this.sdp;
         this.remToken(3);
         const tkn = this.tokens[1];
         if(this.tokens[0].kind != "quotation" ||
         this.tokens[2].kind != "quotation" ||
         tkn.kind != "asciidata"){
-            throw new Error(`Parse Error, line: ${tkn.ln}`);
+            throw new Error(`${tkn.ln}行目：開発者側のエラーです。`);
         }
 
         let dataIdx;
@@ -103,7 +106,7 @@ class Parser{
                 switch(tkn.value[++i]){
                     case "n" : c = "\n"; break;
                     default:
-                        throw new Error(`invalid escape character. line: ${tkn.ln}`);
+                        throw new Error(`${tkn.ln}行目：エスケープ文字は\\nしか対応していません。`);
                 }
                 dataIdx = Math.floor((this.sdp-dataStandard)/4);
                 this.checkStaticDataIndex(dataIdx);
@@ -127,7 +130,7 @@ class Parser{
     }
 
     checkStaticDataIndex(dataIdx){
-        if(dataIdx < 0 || dataSize <= dataIdx){throw new Error(`Data segment overflow.`);}
+        if(dataIdx < 0 || dataSize <= dataIdx){throw new Error(`データ領域を超えました。`);}
     }
 
     parseText(){
@@ -135,7 +138,7 @@ class Parser{
         if(this.tokens.length < 2 ||
             this.tokens[0].kind != "globl" &&
             this.tokens[1].kind != "label"){
-                throw new Error(`Parse Error. line: ${tkn.ln}`);
+                throw new Error(`${tkn.ln}行目：.globlが指定されていないか、ラベルが不正です。`);
         }
         this.startLabel = this.tokens[1].value;
         this.remToken(2);
@@ -145,15 +148,16 @@ class Parser{
             flag = 0;
             flagToken = this.tokens[0];
             if(flagToken.kind == "label"){
-                if(flagToken.value in this.labels){
-                    throw new Error(`"${flagToken.value}"というラベルが二度以上出現しています。\nreinitializeをするかコードを再確認してください。`);
-                }
+                this.checkLabels(flagToken.value);
                 this.labels[flagToken.value] = this.pc;
                 flag = 1;
                 this.remToken(2);
             }
-            if(this.tokens.length == 0 || this.tokens[0].kind != "opt"){
-                throw new Error(`Parse Error. line: ${flagToken.ln}`);
+            if(this.tokens.length == 0){
+                throw new Error(`${flagToken.ln}行目：命令がありません。`);
+            } 
+            if(this.tokens[0].kind != "opt"){
+                throw new Error(`${flagToken.ln}行目：${this.tokens[0].value}は命令ではないか、実装されていません。`);
             }
             if(flag == 1){
                 this.parseInstruction(flagToken.value);
@@ -163,9 +167,16 @@ class Parser{
         }
     }
 
+    checkLabels(label){
+        if(label in this.labels){
+            throw new Error(`"${label}"というラベルが二度以上出現しています。\nreinitializeをするかコードを再確認してください。`);
+        }
+    }
+
     parseInstruction(label){
         let inst;
         const optToken = this.tokens.shift();
+        this.ln = optToken.ln;
         switch(optToken.value){
             case "li" : inst = this.parseLi(); break;
             case "move" : inst = this.parseMove(); break;
@@ -215,7 +226,7 @@ class Parser{
             case "jr" : inst = this.parseJr(); break;
             case "jal" : inst = this.parseJal(); break;
             default:
-                throw new Error(`Parse Error. line: ${optToken.ln}`)
+                throw new Error(`${optToken.ln}行目：開発者側のエラーです。`)
         }
         const programIdx = Math.floor((this.pc - pcStandard) / 4);
         this.program[programIdx].label = label;
@@ -229,7 +240,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "digit"){
-                throw new Error(`wrong argument. "li"`);   
+                throw new Error(`${this.ln}行目："li"という命令に対するオペランドが不正です。`);   
         }
         const inst = new Instruction("li", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -241,7 +252,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "register"){
-                throw new Error(`wrong argument. "move"`);   
+                throw new Error(`${this.ln}行目："move"という命令に対するオペランドが不正です。`);   
         }
         const inst = new Instruction("move", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -260,7 +271,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "add"`);
+                throw new Error(`${this.ln}行目："add"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("add", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -274,7 +285,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "digit"){
-                throw new Error(`wrong argument. "addi"`);
+                throw new Error(`${this.ln}行目："addi"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("addi", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -288,7 +299,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "sub"`);
+                throw new Error(`${this.ln}行目："sub"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("sub", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -300,7 +311,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "register"){
-                throw new Error(`wrong argument. "neg"`);
+                throw new Error(`${this.ln}行目："neg"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("neg", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -312,7 +323,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "register"){
-                throw new Error(`wrong argument. "mult"`);   
+                throw new Error(`${this.ln}行目："mult"という命令に対するオペランドが不正です。`);   
         }
         const inst = new Instruction("mult", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -324,7 +335,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "register"){
-                throw new Error(`wrong argument. "div"`);   
+                throw new Error(`${this.ln}行目："div"という命令に対するオペランドが不正です。`);   
         }
         const inst = new Instruction("div", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -334,7 +345,7 @@ class Parser{
     parseMfhi(){
         if(this.tokens.length == 0 ||
             this.tokens[0].kind != "register"){
-                throw new Error(`wrong argument. "mfhi"`);   
+                throw new Error(`${this.ln}行目："mfhi"という命令に対するオペランドが不正です。`);   
         }
         const inst = new Instruction("mfhi", this.tokens[0].value, "", "");
         this.remToken(1);
@@ -344,7 +355,7 @@ class Parser{
     parseMflo(){
         if(this.tokens.length == 0 ||
             this.tokens[0].kind != "register"){
-                throw new Error(`wrong argument. "mflo"`);   
+                throw new Error(`${this.ln}行目："mflo"という命令に対するオペランドが不正です。`);   
         }
         const inst = new Instruction("mflo", this.tokens[0].value, "", "");
         this.remToken(1);
@@ -358,7 +369,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "and"`);
+                throw new Error(`${this.ln}行目："and"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("and", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -372,7 +383,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "digit"){
-                throw new Error(`wrong argument. "andi"`);
+                throw new Error(`${this.ln}行目："andi"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("andi", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -386,7 +397,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "or"`);
+                throw new Error(`${this.ln}行目："or"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("or", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -400,7 +411,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "digit"){
-                throw new Error(`wrong argument. "ori"`);
+                throw new Error(`${this.ln}行目："ori"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("ori", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -412,7 +423,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "register"){
-                throw new Error(`wrong argument. "not"`);   
+                throw new Error(`${this.ln}行目："not"という命令に対するオペランドが不正です。`);   
         }
         const inst = new Instruction("not", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -426,7 +437,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "xor"`);
+                throw new Error(`${this.ln}行目："xor"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("xor", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -440,7 +451,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "digit"){
-                throw new Error(`wrong argument. "xori"`);
+                throw new Error(`${this.ln}行目："xori"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("xori", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -454,7 +465,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "digit"){
-                throw new Error(`wrong argument. "sll"`);
+                throw new Error(`${this.ln}行目："sll"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("sll", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -468,7 +479,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "digit"){
-                throw new Error(`wrong argument. "srl"`);
+                throw new Error(`${this.ln}行目："srl"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("srl", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -482,7 +493,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "digit"){
-                throw new Error(`wrong argument. "sra"`);
+                throw new Error(`${this.ln}行目："sra"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("sra", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -497,7 +508,7 @@ class Parser{
             this.tokens[3].kind != "lparen" ||
             this.tokens[4].kind != "register" ||
             this.tokens[5].kind != "rparen"){
-                throw new Error(`wrong argument. "sw"`);
+                throw new Error(`${this.ln}行目："sw"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("sw", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(6);
@@ -512,7 +523,7 @@ class Parser{
             this.tokens[3].kind != "lparen" ||
             this.tokens[4].kind != "register" ||
             this.tokens[5].kind != "rparen"){
-                throw new Error(`wrong argument. "lw"`);
+                throw new Error(`${this.ln}行目："lw"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("lw", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(6);
@@ -524,7 +535,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "label"){
-                throw new Error(`wrong argument. "la"`);
+                throw new Error(`${this.ln}行目："la"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("la", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -538,7 +549,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "slt"`);
+                throw new Error(`${this.ln}行目："slt"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("slt", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -552,7 +563,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "digit"){
-                throw new Error(`wrong argument. "slti"`);
+                throw new Error(`${this.ln}行目："slti"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("slti", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -566,7 +577,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "seq"`);
+                throw new Error(`${this.ln}行目："seq"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("seq", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -580,7 +591,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "sge"`);
+                throw new Error(`${this.ln}行目："sge"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("sge", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -594,7 +605,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "sgt"`);
+                throw new Error(`${this.ln}行目："sgt"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("sgt", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -608,7 +619,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "sle"`);
+                throw new Error(`${this.ln}行目："sle"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("sle", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -622,7 +633,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "register"){
-                throw new Error(`wrong argument. "sne"`);
+                throw new Error(`${this.ln}行目："sne"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("sne", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -636,7 +647,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "label"){
-                throw new Error(`wrong argument. "beq"`);
+                throw new Error(`${this.ln}行目："beq"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("beq", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -650,7 +661,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "label"){
-                throw new Error(`wrong argument. "bne"`);
+                throw new Error(`${this.ln}行目："bne"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("bne", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -660,7 +671,7 @@ class Parser{
     parseB(){
         if(this.tokens.length == 0 ||
             this.tokens[0].kind != "label"){
-                throw new Error(`wrong argument. "b"`);
+                throw new Error(`${this.ln}行目："b"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("b", this.tokens[0].value, "", "");
         this.remToken(1);
@@ -674,7 +685,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "label"){
-                throw new Error(`wrong argument. "bge"`);
+                throw new Error(`${this.ln}行目："bge"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("bge", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -688,7 +699,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "label"){
-                throw new Error(`wrong argument. "bgt"`);
+                throw new Error(`${this.ln}行目："bgt"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("bgt", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -702,7 +713,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "label"){
-                throw new Error(`wrong argument. "ble"`);
+                throw new Error(`${this.ln}行目："ble"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("ble", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -716,7 +727,7 @@ class Parser{
             this.tokens[2].kind != "register" ||
             this.tokens[3].kind != "comma" ||
             this.tokens[4].kind != "label"){
-                throw new Error(`wrong argument. "blt"`);
+                throw new Error(`${this.ln}行目："blt"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("blt", this.tokens[0].value, this.tokens[2].value, this.tokens[4].value);
         this.remToken(5);
@@ -728,7 +739,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "label"){
-                throw new Error(`wrong argument. "bgez"`);
+                throw new Error(`${this.ln}行目："bgez"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("bgez", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -740,7 +751,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "label"){
-                throw new Error(`wrong argument. "bgtz"`);
+                throw new Error(`${this.ln}行目："bgtz"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("bgtz", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -752,7 +763,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "label"){
-                throw new Error(`wrong argument. "blez"`);
+                throw new Error(`${this.ln}行目："blez"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("blez", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -764,7 +775,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "label"){
-                throw new Error(`wrong argument. "bltz"`);
+                throw new Error(`${this.ln}行目："bltz"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("bltz", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -776,7 +787,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "label"){
-                throw new Error(`wrong argument. "beqz"`);
+                throw new Error(`${this.ln}行目："beqz"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("beqz", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -788,7 +799,7 @@ class Parser{
             this.tokens[0].kind != "register" ||
             this.tokens[1].kind != "comma" ||
             this.tokens[2].kind != "label"){
-                throw new Error(`wrong argument. "bnez"`);
+                throw new Error(`${this.ln}行目："bnez"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("bnez", this.tokens[0].value, this.tokens[2].value, "");
         this.remToken(3);
@@ -798,7 +809,7 @@ class Parser{
     parseJ(){
         if(this.tokens.length == 0 ||
             this.tokens[0].kind != "label"){
-                throw new Error(`wrong argument. "j"`);
+                throw new Error(`${this.ln}行目："j"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("j", this.tokens[0].value, "", "");
         this.remToken(1);
@@ -808,7 +819,7 @@ class Parser{
     parseJr(){
         if(this.tokens.length == 0 ||
             this.tokens[0].kind != "register"){
-                throw new Error(`wrong argument. "jr"`);
+                throw new Error(`${this.ln}行目："jr"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("jr", this.tokens[0].value, "", "");
         this.remToken(1);
@@ -818,7 +829,7 @@ class Parser{
     parseJal(){
         if(this.tokens.length == 0 ||
             this.tokens[0].kind != "label"){
-                throw new Error(`wrong argument. "jal"`);
+                throw new Error(`${this.ln}行目："jal"という命令に対するオペランドが不正です。`);
         }
         const inst = new Instruction("jal", this.tokens[0].value, "", "");
         this.remToken(1);
