@@ -92,30 +92,37 @@ class Processor{
         this.pc = this.labels[this.startLabel];
         this.registers[this.r2i["$ra"]].value = -1;
         this.outputController.printMessage("再実行可能です。\n");
-        //this.registers[this.r2i["$sp"]].value = stackStandard;
     }
 
     executeRun(){
-        let programIdx;
-        this.runState = 1;
-        if(this.execState == 0){
-            this.outputController.printMessage("Program is not executable state.\n");
-            return;
+        try {
+            let programIdx;
+            this.runState = 1;
+            if(this.execState == 0){
+                this.outputController.printMessage("Program is not executable state.\n");
+                return;
+            }
+            if(this.syscallState == 5){
+                this.outputController.printMessage("Input Integer and click button.\n");
+                return;
+            }
+            while(this.runState == 1 && this.execState == 1 && this.syscallState != 5){
+                programIdx = this.checkProgramErrorAndReturnIndex(this.pc);
+                this.pc = this.pc + 4;
+                this.processInstruction(this.program[programIdx].inst);
+            }
+            if(this.syscallState == 5){return;}
+            this.runState = 0;
+            this.resetDstSrc();
+            this.outputController.afterRunAllTable(this.registers, this.stack, this.hi, this.lo, this.pc);
+            this.outputController.printMessage("実行が完了しました。");
+        } catch (error) {
+            this.runState = 0;
+            this.execState = 0;
+            this.syscallState = 0;
+            this.outputController.printMessage(error.message + "\nプログラムを強制終了します。");
+            console.error(error);
         }
-        if(this.syscallState == 5){
-            this.outputController.printMessage("Input Integer and click button.\n");
-            return;
-        }
-        while(this.runState == 1 && this.execState == 1 && this.syscallState != 5){
-            programIdx = this.pa2i(this.pc);
-            this.pc = this.pc + 4;
-            this.processInstruction(this.program[programIdx].inst);
-        }
-        if(this.syscallState == 5){return;}
-        this.runState = 0;
-        this.resetDstSrc();
-        this.outputController.afterRunAllTable(this.registers, this.stack, this.hi, this.lo, this.pc);
-        this.outputController.printMessage("実行が完了しました。");
     }
 
     resetDstSrc(){
@@ -132,20 +139,33 @@ class Processor{
     }
 
     executeStep(){
-        if(this.execState == 0){
-            this.outputController.printMessage("Program is not executable state.\n");
-            return;
+        try {
+            if(this.execState == 0){
+                this.outputController.printMessage("Program is not executable state.\n");
+                return;
+            }
+            if(this.syscallState == 5){
+                this.outputController.printMessage("Input Integer and click button.\n");
+                return;
+            }
+            const programIdx = this.checkProgramErrorAndReturnIndex(this.pc);
+            this.program[programIdx].current = 1;
+            this.pc = this.pc + 4;
+            this.processInstruction(this.program[programIdx].inst);
+            this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
+            this.hi.dst = this.hi.src = this.lo.dst = this.lo.src = 0;
+        } catch (error) {
+            this.outputController.printMessage(error.message);
+            console.error(error);
         }
-        if(this.syscallState == 5){
-            this.outputController.printMessage("Input Integer and click button.\n");
-            return;
-        }
-        const programIdx = this.pa2i(this.pc);
-        this.program[programIdx].current = 1;
-        this.pc = this.pc + 4;
-        this.processInstruction(this.program[programIdx].inst);
-        this.outputController.rewriteAllTable(this.registers, this.stack, this.program, this.hi, this.lo, this.pc);
-        this.hi.dst = this.hi.src = this.lo.dst = this.lo.src = 0;
+    }
+
+    checkProgramErrorAndReturnIndex(address){
+        let programIdx;
+        if(!this.addressInProgram(address)){throw new Error(`0x${address.toString(16)}の命令は実行できません。`);}
+        programIdx = this.pa2i(address);
+        if(this.program[programIdx].inst.opt == ""){throw new Error(`0x${address.toString(16)}には命令がありません。`);}
+        return programIdx;
     }
 
     processInstruction(inst){

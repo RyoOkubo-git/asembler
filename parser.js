@@ -32,6 +32,7 @@ class Parser{
                     throw new Error(`Parse Error, line: ${tkn.ln}`)
             }
         }
+        if(!(this.startLabel in this.labels)){throw new Error(`.globlで指定されているラベル"${this.startLabel}"が存在しないようです。`)}
     }
 
     remToken(n){
@@ -144,6 +145,9 @@ class Parser{
             flag = 0;
             flagToken = this.tokens[0];
             if(flagToken.kind == "label"){
+                if(flagToken.value in this.labels){
+                    throw new Error(`"${flagToken.value}"というラベルが二度以上出現しています。\nreinitializeをするかコードを再確認してください。`);
+                }
                 this.labels[flagToken.value] = this.pc;
                 flag = 1;
                 this.remToken(2);
