@@ -87,7 +87,7 @@ class Lexer{
     }
 
     tokenDigit(){
-        let idx = this.stream.search(/[ \n(,]/);
+        let idx = this.stream.search(/[\s(,]/);
         if(idx < 0) idx = this.stream.length;
         const dig = this.stream.substring(0,idx);
         const regexp = RegExp('^[\-\+]?[0-9]+$', 'g');
@@ -98,7 +98,7 @@ class Lexer{
 
     tokenDot(){
         this.nextWord();
-        let idx = this.stream.search(/[ \n]/);
+        let idx = this.stream.search(/[\s]/);
         if(idx < 0) idx = this.stream.length;
         const seg = "."+this.stream.substring(0,idx);
         this.stream = this.stream.slice(idx);

@@ -734,11 +734,17 @@ class Processor{
             this.outputController.printMessage("整数のみ受け付けています。\n");
         }else{
             const num = parseInt(text, 10);
-            this.registers[this.r2i["$v0"]].value = num;
+            const rv0 = this.r2i["$v0"];
+            this.registers[rv0].value = num;
+            this.registers[rv0].dst = 1;
             this.syscallState = 0;
             this.outputController.printMessage("入力を受け付けました。\n");
             this.outputController.printDisplay(text+"\n");
-            if(this.runState == 1){this.executeRun();}
+            if(this.runState == 1){
+                this.executeRun();
+            }else{
+                this.outputController.rewriteRegisterTable(this.registers);
+            }
         }
     }
 
